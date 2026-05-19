@@ -11,7 +11,8 @@
       "Bash(curl -sI https://farmtsutsumi.github.io/honey-taste-mockup/)",
       "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"operable prototype with full features\")",
       "Bash(git push *)",
-      "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"simplify prototype\")"
+      "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"simplify prototype\")",
+      "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"add cash payment flow and multi-store filter\")"
     ]
   }
 }
