@@ -195,11 +195,13 @@
     position: relative;
   }
   .kiosk-exit {
-    position: absolute; top: 14px; right: 14px;
-    color: rgba(255,255,255,0.4);
-    background: none; border: 1px solid rgba(255,255,255,0.2);
-    padding: 6px 12px; border-radius: 8px; font-size: 11px; cursor: pointer;
+    position: absolute; top: 16px; right: 16px;
+    color: var(--ink);
+    background: var(--honey); border: none;
+    padding: 10px 16px; border-radius: 22px; font-size: 13px; font-weight: 700; cursor: pointer;
+    z-index: 10;
   }
+  .kiosk-exit:active { opacity: 0.7; }
   .kiosk .logo { font-size: 36px; }
   .kiosk .store { color: var(--honey); font-size: 13px; letter-spacing: 0.2em; margin-bottom: 28px; }
   .kiosk .clock { font-size: 64px; font-weight: 200; line-height: 1; letter-spacing: 0.02em; }
@@ -534,7 +536,7 @@ function viewKiosk() {
   const store = storeById(session.params.storeId);
   const now = new Date();
   return `
-    <button class="kiosk-exit" data-act="logout">× 終了</button>
+    <button class="kiosk-exit" data-act="logout">🏠 ログイン画面</button>
     <div class="kiosk">
       <div class="logo">🐝</div>
       <div class="store">${store.name.toUpperCase()}</div>
@@ -562,6 +564,7 @@ function viewKioskDone() {
   const m = calcMonth(staffId, thisMonth());
   const isOut = action === 'out';
   return `
+    <button class="kiosk-exit" data-act="logout">🏠 ログイン画面</button>
     <div class="kiosk">
       <div class="logo">🐝</div>
       <div class="kiosk-done">
@@ -828,7 +831,7 @@ function handle(act, d) {
       setSession({ userId: 'owner', view: 'home' });
       render(); break;
     case 'pickStaff':
-      modal(`<h3>誰でログインする？</h3>` + db.staff.map(s => `
+      modal(`<h3>誰でログインする？</h3>` + db.staff.filter(s=>s.id!=='owner').map(s => `
         <div class="picker" data-act="login" data-uid="${s.id}">
           <div class="who-info"><div class="nm">${s.name}</div><div class="mt">${storeById(s.storeId).name}</div></div><div>›</div>
         </div>`).join(''));
