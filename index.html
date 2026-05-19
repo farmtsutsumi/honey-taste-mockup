@@ -401,6 +401,19 @@
   .my-shift-row .hr { color: var(--honey-deep); font-weight: 700; }
   .my-shift-row.past { opacity: 0.5; }
   .empty .ico { font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.4; }
+
+  @media print {
+    body { background: #fff; }
+    .top, .tabbar, .btn, .store-pills, .nav { display: none !important; }
+    #app { max-width: 100%; padding: 0; }
+    .card { break-inside: avoid; box-shadow: none; }
+    .summary-box, .hero { background: none !important; color: #000 !important; border: 2px solid #000; }
+    button { display: none !important; }
+  }
+
+  .check.lg { width: 36px; height: 36px; border-width: 2px; font-size: 20px; }
+  .check:hover { background: var(--honey-light); }
+  .check.paid:hover { background: var(--ok); }
 </style>
 </head>
 <body>
@@ -410,7 +423,12 @@
 
 <script>
 /* ============ DATA ============ */
-const KEY = 'honeytaste_simple_v1';
+const KEY = 'honeytaste_simple_v3';
+/* Clean up old keys */
+try {
+  ['honeytaste_simple_v1','honeytaste_simple_v2','honeytaste_v1'].forEach(k => localStorage.removeItem(k));
+  ['honeytaste_simple_session','honeytaste_session_v1'].forEach(k => sessionStorage.removeItem(k));
+} catch(e) {}
 
 const ALLOWANCE_DEFS = {
   salesBack: { label: '売り上げバック', kind: 'manual' },
@@ -795,7 +813,7 @@ function viewOwnerHome() {
       <h2>シフト</h2>
       <div class="card" data-act="go" data-v="shifts" style="cursor:pointer">
         <div class="row">
-          <div><div class="name">週ごとのシフト編集</div><div class="meta">タップで時間入力・前週コピー</div></div>
+          <div><div class="name">週ごとのシフト編集</div><div class="meta">今週 ${db.shifts.filter(sh=>{const d=new Date(sh.date);const sun=new Date();sun.setDate(sun.getDate()-sun.getDay());const sat=new Date(sun);sat.setDate(sat.getDate()+6);return d>=sun&&d<=sat;}).length}件 確定済</div></div>
           <div style="color:var(--muted)">›</div>
         </div>
       </div>
@@ -803,7 +821,15 @@ function viewOwnerHome() {
       <h2>月末の支給（現金）</h2>
       <div class="card" data-act="go" data-v="payroll" style="cursor:pointer">
         <div class="row">
-          <div><div class="name">${ym} の支給リスト</div><div class="meta">印刷・受け取り確認</div></div>
+          <div><div class="name">${ym} の支給リスト</div><div class="meta">合計 ${yen(totalPay)} ・ 印刷・受け取り確認</div></div>
+          <div style="color:var(--muted)">›</div>
+        </div>
+      </div>
+
+      <h2>その他</h2>
+      <div class="card" data-act="go" data-v="approvals" style="cursor:pointer">
+        <div class="row">
+          <div><div class="name">前借り承認</div><div class="meta">${pending > 0 ? pending + '件 待ち' : '承認待ちなし'} ・ 履歴を見る</div></div>
           <div style="color:var(--muted)">›</div>
         </div>
       </div>
@@ -1199,7 +1225,8 @@ function bind() {
 function handle(act, d) {
   switch (act) {
     case 'loginOwner':
-      setSession({ userId: 'owner', view: 'home' });
+      closeModal();
+      setSession({ userId: 'owner', view: 'home', params: {} });
       render(); break;
     case 'pickStaff':
       modal(`<h3>誰でログインする？</h3>` + db.staff.filter(s=>s.id!=='owner').map(s => `
@@ -1209,7 +1236,7 @@ function handle(act, d) {
       break;
     case 'login':
       closeModal();
-      setSession({ userId: d.uid, view: 'home' });
+      setSession({ userId: d.uid, view: 'home', params: {} });
       render(); break;
     case 'openKiosk':
       setSession({ userId: null, view: 'kiosk', params: { storeId: db.stores[0].id } });
@@ -1267,9 +1294,9 @@ function handle(act, d) {
       setTimeout(() => {
         if (session && session.view === 'kioskDone') {
           session.view = 'kiosk'; session.params = { storeId }; setSession(session);
-          render();
+          render(); startClock();
         }
-      }, 4000);
+      }, 6000);
       break;
     }
 
@@ -1346,6 +1373,7 @@ function handle(act, d) {
       db.shifts = db.shifts.filter(s => s.id !== d.id);
       save(); closeModal(); toast('削除しました'); render(); break;
     case 'copyPrev': {
+      if (!confirm('前週のシフトを今表示中の週にコピーします。よろしいですか？')) return;
       const offset = session.params?.weekOff || 0;
       const today2 = new Date();
       const sun = new Date(today2); sun.setDate(sun.getDate() - today2.getDay() + offset * 7);
@@ -1410,9 +1438,11 @@ function handle(act, d) {
     case 'submitAdv': {
       const amt = parseInt(document.getElementById('adv-a').value);
       const r = document.getElementById('adv-r').value.trim();
-      if (!amt || !r) { toast('金額と理由を入力'); return; }
+      if (!amt || amt <= 0) { toast('金額を正しく入力してください'); return; }
+      if (amt > 500000) { toast('上限¥500,000以下にしてください'); return; }
+      if (!r) { toast('理由を入力してください'); return; }
       db.advances.push({ id:'a'+Date.now(), staffId: session.userId, amount: amt, reason: r, status:'pending', at: new Date().toISOString() });
-      save(); toast('オーナーに送りました'); render();
+      save(); toast('オーナーに送りました'); session.view = 'home'; setSession(session); render();
       break;
     }
 
