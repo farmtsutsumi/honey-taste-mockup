@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honey Taste 🐝 勤怠・給与システム モック</title>
+<style>
+  :root {
+    --honey: #f5b800;
+    --honey-deep: #d99700;
+    --honey-light: #fff4d1;
+    --ink: #1a1410;
+    --ink-soft: #3a2f25;
+    --paper: #fffaf0;
+    --line: #e8dcc4;
+    --muted: #8a7a65;
+    --ok: #2e9d6a;
+    --warn: #d96b3a;
+    --bad: #c8453d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: linear-gradient(135deg, #2a1f15 0%, #1a1410 100%);
+    color: var(--ink);
+    font-family: -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px 80px;
+  }
+  .board-header {
+    max-width: 1600px;
+    margin: 0 auto 40px;
+    color: #fff;
+    text-align: center;
+  }
+  .board-header h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+  }
+  .board-header h1 .bee { color: var(--honey); }
+  .board-header .sub {
+    color: #b8a890;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+  .section-label {
+    max-width: 1600px;
+    margin: 48px auto 20px;
+    color: var(--honey);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    border-bottom: 1px solid #3a2f25;
+    padding-bottom: 8px;
+  }
+  .grid {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 32px;
+    justify-items: center;
+  }
+
+  /* iPhone-ish frame */
+  .phone {
+    width: 320px;
+    height: 680px;
+    background: var(--ink);
+    border-radius: 40px;
+    padding: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px #444;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .phone::before {
+    content: "";
+    position: absolute;
+    top: 18px; left: 50%;
+    transform: translateX(-50%);
+    width: 90px; height: 24px;
+    background: #000;
+    border-radius: 14px;
+    z-index: 10;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    background: var(--paper);
+    border-radius: 28px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .phone-label {
+    text-align: center;
+    color: #b8a890;
+    margin-top: 14px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+  .phone-label strong { color: var(--honey); font-weight: 600; }
+
+  /* status bar */
+  .status-bar {
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  /* app header */
+  .app-bar {
+    padding: 8px 18px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .app-bar .title { font-weight: 700; font-size: 17px; }
+  .app-bar .right { font-size: 12px; color: var(--muted); }
+  .app-bar .back { color: var(--honey-deep); font-size: 14px; }
+
+  /* tab bar */
+  .tab-bar {
+    height: 64px;
+    border-top: 1px solid var(--line);
+    background: #fff;
+    display: flex;
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--muted);
+    gap: 2px;
+  }
+  .tab.active { color: var(--honey-deep); font-weight: 600; }
+  .tab .ico { font-size: 20px; }
+
+  .body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  /* === SCREEN 1: 打刻 === */
+  .clock-screen {
+    background: linear-gradient(180deg, #2a1f15 0%, #1a1410 100%);
+    color: #fff;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .clock-logo {
+    font-size: 32px;
+    margin-bottom: 4px;
+  }
+  .clock-store {
+    color: var(--honey);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    margin-bottom: 28px;
+  }
+  .clock-time {
+    font-size: 48px;
+    font-weight: 200;
+    color: #fff;
+    letter-spacing: 0.04em;
+  }
+  .clock-date {
+    font-size: 13px;
+    color: #b8a890;
+    margin-bottom: 36px;
+  }
+  .felica-zone {
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    border: 2px dashed var(--honey);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    color: var(--honey);
+    margin-bottom: 24px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.04); opacity: 0.7; }
+  }
+  .felica-zone .ico { font-size: 56px; }
+  .felica-zone .txt { font-size: 12px; margin-top: 4px; letter-spacing: 0.1em; }
+  .clock-hint { color: #b8a890; font-size: 11px; }
+  .clock-alt {
+    margin-top: 20px;
+    color: var(--honey);
+    font-size: 12px;
+    text-decoration: underline;
+  }
+
+  /* === SCREEN: 打刻完了 === */
+  .clock-done {
+    flex: 1;
+    background: linear-gradient(180deg, #2a1f15 0%, #1a1410 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .clock-done .check {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: var(--honey);
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 56px;
+    margin-bottom: 20px;
+  }
+  .clock-done h2 { font-size: 22px; margin-bottom: 6px; }
+  .clock-done .name { color: var(--honey); font-size: 16px; margin-bottom: 24px; }
+  .clock-done .info {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(245,184,0,0.2);
+    border-radius: 12px;
+    padding: 16px 24px;
+    width: 100%;
+  }
+  .clock-done .info .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+  .clock-done .info .row .k { color: #b8a890; }
+  .clock-done .info .row .v { color: #fff; font-weight: 600; }
+
+  /* === common cards === */
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .big-num {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .big-num .unit { font-size: 13px; color: var(--muted); margin-left: 4px; }
+  .sub-num { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .row-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .row-line:last-child { border-bottom: none; }
+  .row-line .name { font-weight: 600; }
+  .row-line .meta { color: var(--muted); font-size: 11px; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .badge.ok { background: #e0f3e8; color: var(--ok); }
+  .badge.warn { background: #fde9d8; color: var(--warn); }
+  .badge.bad { background: #fadcd9; color: var(--bad); }
+  .badge.honey { background: var(--honey-light); color: var(--honey-deep); }
+
+  .btn-primary {
+    background: var(--honey);
+    color: var(--ink);
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    width: 100%;
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--honey-deep);
+    border: 1px solid var(--honey);
+    padding: 10px;
+    border-radius: 10px;
+    width: 100%;
+    font-weight: 600;
+    font-size: 13px;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row > * { flex: 1; }
+
+  /* shift grid */
+  .shift-week {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+    gap: 2px;
+    font-size: 10px;
+  }
+  .shift-week .h {
+    text-align: center;
+    color: var(--muted);
+    padding: 4px 0;
+    font-weight: 600;
+  }
+  .shift-week .name-cell {
+    padding: 6px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  .shift-week .cell {
+    aspect-ratio: 1;
+    background: #f5efe0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .shift-week .cell.on {
+    background: var(--honey);
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .shift-week .cell.holiday {
+    background: #f5efe0;
+    color: #c0b095;
+  }
+
+  /* store switcher */
+  .store-switch {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .store-pill {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .store-pill.active {
+    background: var(--ink);
+    color: var(--honey);
+    border-color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* dashboard tiles */
+  .tile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .tile {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .tile .label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .tile .num {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .tile .num .yen { font-size: 11px; color: var(--muted); font-weight: 400; }
+  .tile.dark {
+    background: linear-gradient(135deg, #2a1f15 0%, #1a1410 100%);
+    color: #fff;
+    border: none;
+  }
+  .tile.dark .label { color: var(--honey); }
+
+  /* approval list */
+  .approval-item {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--warn);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .approval-item .top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .approval-item .who { font-weight: 700; font-size: 14px; }
+  .approval-item .amount { font-weight: 700; color: var(--honey-deep); font-size: 16px; }
+  .approval-item .reason { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .approval-item .actions { display: flex; gap: 6px; }
+  .approval-item button {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .approval-item .approve { background: var(--honey); color: var(--ink); }
+  .approval-item .reject { background: #f5efe0; color: var(--ink-soft); }
+
+  /* payroll list */
+  .payroll-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+  }
+  .payroll-row .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .payroll-row .amt { font-weight: 700; font-size: 15px; }
+  .payroll-row .amt-sub { font-size: 10px; color: var(--muted); text-align: right; }
+
+  .summary-box {
+    background: linear-gradient(135deg, var(--honey) 0%, var(--honey-deep) 100%);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .summary-box .lbl { font-size: 11px; opacity: 0.7; }
+  .summary-box .big { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .summary-box .sub { font-size: 11px; opacity: 0.8; margin-top: 4px; }
+
+  /* legend */
+  .legend {
+    max-width: 1600px;
+    margin: 60px auto 0;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(245,184,0,0.2);
+    border-radius: 16px;
+    padding: 24px 32px;
+    color: #e8dcc4;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .legend h3 { color: var(--honey); margin-bottom: 12px; font-size: 14px; letter-spacing: 0.1em; }
+  .legend ul { padding-left: 20px; }
+  .legend li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="board-header">
+  <h1>Honey Taste <span class="bee">🐝</span> 勤怠・給与システム</h1>
+  <div class="sub">MVP MOCKUP &nbsp;·&nbsp; Mobile-first &nbsp;·&nbsp; Multi-store</div>
+</div>
+
+<!-- ====================== 打刻 ====================== -->
+<div class="section-label">01 · 打刻（FeliCa / 共用端末）</div>
+<div class="grid">
+
+  <div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar"></div>
+        <div class="clock-screen">
+          <div class="clock-logo">🐝</div>
+          <div class="clock-store">HONEY TASTE · 本店</div>
+          <div class="clock-time">21:34</div>
+          <div class="clock-date">2026.05.19 (月)</div>
+          <div class="felica-zone">
+            <div class="ico">📱</div>
+            <div class="txt">TOUCH HERE</div>
+          </div>
+          <div class="clock-hint">交通系IC・社員証をタッチ</div>
+          <div class="clock-alt">パスコードで打刻</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>1-A</strong> 打刻待機（共用端末）</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar"></div>
+        <div class="clock-done">
+          <div class="check">✓</div>
+          <h2>出勤しました</h2>
+          <div class="name">あおい さん</div>
+          <div class="info">
+            <div class="row"><span class="k">店舗</span><span class="v">本店</span></div>
+            <div class="row"><span class="k">出勤時刻</span><span class="v">21:34</span></div>
+            <div class="row"><span class="k">今月の出勤</span><span class="v">12 日 / 78.5h</span></div>
+            <div class="row"><span class="k">今月の見込</span><span class="v">¥ 198,400</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>1-B</strong> 打刻完了（3秒で自動遷移）</div>
+  </div>
+
+</div>
+
+<!-- ====================== オーナーダッシュボード ====================== -->
+<div class="section-label">02 · オーナー画面（多店舗一括）</div>
+<div class="grid">
+
+  <div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar"></div>
+        <div class="app-bar">
+          <div class="title">ダッシュボード</div>
+          <div class="right">2026年5月</div>
+        </div>
+        <div class="body">
+          <div class="store-switch">
+            <div class="store-pill active">全店</div>
+            <div class="store-pill">Honey Taste 本店</div>
+            <div class="store-pill">Bar Mitsu</div>
+            <div class="store-pill">Esthe Lumi</div>
+          </div>
+
+          <div class="summary-box">
+            <div class="lbl">今月の人件費 見込み</div>
+            <div class="big">¥ 2,847,200</div>
+            <div class="sub">前月比 +¥124,000 ・ 在籍 23名</div>
+          </div>
+
+          <div class="tile-grid">
+            <div class="tile">
+              <div class="label">本日出勤中</div>
+              <div class="num">14<span class="yen"> 名</span></div>
+            </div>
+            <div class="tile">
+              <div class="label">承認待ち</div>
+              <div class="num">3<span class="yen"> 件</span></div>
+            </div>
+            <div class="tile dark">
+              <div class="label">前借り残高</div>
+              <div class="num">¥ 184,000</div>
+            </div>
+            <div class="tile">
+              <div class="label">月末締めまで</div>
+              <div class="num">12<span class="yen"> 日</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">店舗別 人件費</div>
+            <div class="row-line">
+              <div><div class="name">Honey Taste 本店</div><div class="meta">在籍 12名 · 出勤中 8名</div></div>
+              <div style="text-align:right"><div style="font-weight:700">¥ 1,420,000</div><div class="meta">予算内</div></div>
+            </div>
+            <div class="row-line">
+              <div><div class="name">Bar Mitsu</div><div class="meta">在籍 6名 · 出勤中 4名</div></div>
+              <div style="text-align:right"><div style="font-weight:700">¥ 824,000</div><div class="meta">予算内</div></div>
+            </div>
+            <div class="row-line">
+              <div><div class="name">Esthe Lumi</div><div class="meta">在籍 5名 · 出勤中 2名</div></div>
+              <div style="text-align:right"><div style="font-weight:700">¥ 603,200</div><div class="meta">+8%</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab active"><div class="ico">📊</div>ホーム</div>
+          <div class="tab"><div class="ico">👥</div>スタッフ</div>
+          <div class="tab"><div class="ico">📅</div>シフト</div>
+          <div class="tab"><div class="ico">💴</div>給与</div>
+          <div class="tab"><div class="ico">⚙️</div>設定</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>2-A</strong> オーナーホーム（多店舗ビュー）</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar"></div>
+        <div class="app-bar">
+          <div class="back">‹ 戻る</div>
+          <div class="title">前借り承認</div>
+          <div class="right">3件</div>
+        </div>
+        <div class="body">
+          <div class="approval-item">
+            <div class="top">
+              <div class="who">あおい <span style="color:var(--muted);font-size:11px;font-weight:400">· 本店</span></div>
+              <div class="amount">¥ 30,000</div>
+            </div>
+            <div class="reason">理由: 家賃支払いのため / 申請 5/18 23:10</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+              今月見込 ¥198,400 · 前借残 ¥0
+            </div>
+            <div class="actions">
+              <button class="reject">却下</button>
+              <button class="approve">承認</button>
+            </div>
+          </div>
+
+          <div class="approval-item">
+            <div class="top">
+              <div class="who">れな <span style="color:var(--muted);font-size:11px;font-weight:400">· 本店</span></div>
+              <div class="amount">¥ 50,000</div>
+            </div>
+            <div class="reason">理由: 帰省費用 / 申請 5/19 14:22</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+              今月見込 ¥312,000 · 前借残 ¥20,000 <span class="badge warn">残高あり</span>
+            </div>
+            <div class="actions">
+              <button class="reject">却下</button>
+              <button class="approve">承認</button>
+            </div>
+          </div>
+
+          <div class="approval-item">
+            <div class="top">
+              <div class="who">ケンジ <span style="color:var(--muted);font-size:11px;font-weight:400">· Bar Mitsu</span></div>
+              <div class="amount">¥ 20,000</div>
+            </div>
+            <div class="reason">理由: 友人結婚式 / 申請 5/19 18:40</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+              今月見込 ¥184,000 · 前借残 ¥0
+            </div>
+            <div class="actions">
+              <button class="reject">却下</button>
+              <button class="approve">承認</button>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="ico">📊</div>ホーム</div>
+          <div class="tab"><div class="ico">👥</div>スタッフ</div>
+          <div class="tab"><div class="ico">📅</div>シフト</div>
+          <div class="tab active"><div class="ico">💴</div>給与</div>
+          <div class="tab"><div class="ico">⚙️</div>設定</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>2-B</strong> 前借り承認（オーナー専用）</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar"></div>
+        <div class="app-bar">
+          <div class="title">月末締め · 5月</div>
+          <div class="right">CSV</div>
+        </div>
+        <div class="body">
+          <div class="summary-box">
+            <div class="lbl">支給合計</div>
+            <div class="big">¥ 2,847,200</div>
+            <div class="sub">23名 · 前借相殺 ¥184,000 控除済</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">本店 (12名)</div>
+            <div class="payroll-row">
+              <div>
+                <div class="name" style="font-weight:600;font-size:13px">あおい</div>
+                <div class="meta">82.5h · 前借 ¥30,000</div>
+              </div>
+              <div>
+                <div class="amt">¥ 168,400</div>
+                <div class="amt-sub">基本 198,400</div>
+              </div>
+            </div>
+            <div class="payroll-row">
+              <div>
+                <div class="name" style="font-weight:600;font-size:13px">れな</div>
+                <div class="meta">96.0h · 前借 ¥70,000</div>
+              </div>
+              <div>
+                <div class="amt">¥ 242,000</div>
+                <div class="amt-sub">基本 312,000</div>
+              </div>
+            </div>
+            <div class="payroll-row">
+              <div>
+                <div class="name" style="font-weight:600;font-size:13px">みお</div>
+                <div class="meta">64.0h</div>
+              </div>
+              <div>
+                <div class="amt">¥ 156,800</div>
+                <div class="amt-sub">基本 156,800</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Bar Mitsu (6名)</div>
+            <div class="payroll-row">
+              <div>
+                <div class="name" style="font-weight:600;font-size:13px">ケンジ</div>
+                <div class="meta">72.0h · 前借 ¥20,000</div>
+              </div>
+              <div>
+                <div class="amt">¥ 164,000</div>
+                <div class="amt-sub">基本 184,000</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-primary">振込用CSVをダウンロード</button>
+          <button class="btn-ghost">明細をLINEで一括送信</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>2-C</strong> 月末締め・振込データ出力</div>
+  </div>
+
+</div>
+
+<!-- ====================== 店長 ====================== -->
+<div class="section-label">03 · 店長画面（自店のみ）</div>
+<div class="grid">
+
+  <div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar"></div>
+        <div class="app-bar">
+          <div class="title">勤怠帳簿</div>
+          <div class="right">5月</div>
+        </div>
+        <div class="body">
+          <div class="store-switch">
+            <div class="store-pill active">本店</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">本日 5/19 (月)</div>
+            <div class="row-line">
+              <div><div class="name">あおい</div><div class="meta">21:34 出勤 〜 出勤中</div></div>
+              <span class="badge ok">勤務中</span>
+            </div>
+            <div class="row-line">
+              <div><div class="name">れな</div><div class="meta">20:02 〜 02:18 (6h16m)</div></div>
+              <span class="badge honey">退勤</span>
+            </div>
+            <div class="row-line">
+              <div><div class="name">みお</div><div class="meta">21:10 出勤 〜 出勤中</div></div>
+              <span class="badge ok">勤務中</span>
+            </div>
+            <div class="row-line">
+              <div><div class="name">さくら</div><div class="meta">予定 21:00 〜</div></div>
+              <span class="badge warn">未出勤</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">今月の累計</div>
+            <div class="row-line">
+              <div><div class="name">あおい</div></div>
+              <div style="text-align:right;font-size:12px"><strong>82.5h</strong> / 12日</div>
+            </div>
+            <div class="row-line">
+              <div><div class="name">れな</div></div>
+              <div style="text-align:right;font-size:12px"><strong>96.0h</strong> / 14日</div>
+            </div>
+            <div class="row-line">
+              <div><div class="name">みお</div></div>
+              <div style="text-align:right;font-size:12px"><strong>64.0h</strong> / 10日</div>
+            </div>
+            <div class="row-line">
+              <div><div class="name">さくら</div></div>
+              <div style="text-align:right;font-size:12px"><strong>48.5h</strong> / 8日</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="ico">🏠</div>ホーム</div>
+          <div class="tab active"><div class="ico">📋</div>勤怠</div>
+          <div class="tab"><div class="ico">📅</div>シフト</div>
+          <div class="tab"><div class="ico">👥</div>スタッフ</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>3-A</strong> 勤怠帳簿（今日 / 月次）</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar"></div>
+        <div class="app-bar">
+          <div class="title">シフト</div>
+          <div class="right">5/18 - 5/24</div>
+        </div>
+        <div class="body">
+          <div class="store-switch">
+            <div class="store-pill active">本店</div>
+          </div>
+
+          <div class="card" style="padding:10px">
+            <div class="shift-week">
+              <div></div>
+              <div class="h">月</div><div class="h">火</div><div class="h">水</div>
+              <div class="h">木</div><div class="h">金</div><div class="h">土</div><div class="h">日</div>
+
+              <div class="name-cell">あおい</div>
+              <div class="cell on">21-2</div><div class="cell on">21-2</div>
+              <div class="cell">休</div><div class="cell on">21-2</div>
+              <div class="cell on">21-3</div><div class="cell on">20-3</div><div class="cell">休</div>
+
+              <div class="name-cell">れな</div>
+              <div class="cell on">20-2</div><div class="cell">休</div>
+              <div class="cell on">21-2</div><div class="cell on">21-2</div>
+              <div class="cell on">20-3</div><div class="cell on">20-3</div><div class="cell on">20-1</div>
+
+              <div class="name-cell">みお</div>
+              <div class="cell on">21-1</div><div class="cell on">21-1</div>
+              <div class="cell on">21-1</div><div class="cell">休</div>
+              <div class="cell on">21-2</div><div class="cell">休</div><div class="cell">休</div>
+
+              <div class="name-cell">さくら</div>
+              <div class="cell">休</div><div class="cell on">21-1</div>
+              <div class="cell on">21-1</div><div class="cell on">21-1</div>
+              <div class="cell on">21-2</div><div class="cell on">21-2</div><div class="cell">休</div>
+
+              <div class="name-cell">ゆい</div>
+              <div class="cell on">21-2</div><div class="cell on">21-2</div>
+              <div class="cell on">21-2</div><div class="cell on">21-2</div>
+              <div class="cell on">21-3</div><div class="cell on">21-3</div><div class="cell on">20-1</div>
+            </div>
+          </div>
+
+          <div style="font-size:11px;color:var(--muted);margin:8px 0 12px">
+            ※ 数字は出勤〜退勤時刻（時）。タップで編集
+          </div>
+
+          <button class="btn-primary">シフトを確定 · LINE通知</button>
+          <button class="btn-ghost">前週をコピー</button>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="ico">🏠</div>ホーム</div>
+          <div class="tab"><div class="ico">📋</div>勤怠</div>
+          <div class="tab active"><div class="ico">📅</div>シフト</div>
+          <div class="tab"><div class="ico">👥</div>スタッフ</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>3-B</strong> 週次シフト編集</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar"></div>
+        <div class="app-bar">
+          <div class="back">‹ あおい</div>
+          <div class="title">給与明細</div>
+          <div class="right">5月</div>
+        </div>
+        <div class="body">
+          <div class="summary-box">
+            <div class="lbl">支給予定額</div>
+            <div class="big">¥ 168,400</div>
+            <div class="sub">基本 ¥198,400 − 前借 ¥30,000</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">勤務実績</div>
+            <div class="row-line">
+              <div class="name">出勤日数</div>
+              <div style="font-weight:700">12 日</div>
+            </div>
+            <div class="row-line">
+              <div class="name">勤務時間</div>
+              <div style="font-weight:700">82.5 h</div>
+            </div>
+            <div class="row-line">
+              <div class="name">うち深夜(22-5時)</div>
+              <div style="font-weight:700">68.0 h</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">支給内訳</div>
+            <div class="row-line">
+              <div>基本給 (2,400 × 14.5h)</div>
+              <div>¥ 34,800</div>
+            </div>
+            <div class="row-line">
+              <div>深夜給 (3,000 × 68.0h)</div>
+              <div>¥ 204,000</div>
+            </div>
+            <div class="row-line">
+              <div style="color:var(--muted);font-size:11px">バック等 <span class="badge honey">v2で自動</span></div>
+              <div>¥ 0</div>
+            </div>
+            <div class="row-line">
+              <div style="color:var(--bad)">前借り相殺</div>
+              <div style="color:var(--bad)">− ¥ 30,000</div>
+            </div>
+            <div class="row-line">
+              <div style="color:var(--muted);font-size:11px">源泉(10.21%) <span class="badge honey">v2</span></div>
+              <div>¥ 0</div>
+            </div>
+            <div class="row-line" style="font-size:15px;font-weight:700">
+              <div>差引支給額</div>
+              <div style="color:var(--honey-deep)">¥ 168,400</div>
+            </div>
+          </div>
+
+          <button class="btn-ghost">明細をPDFで保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>3-C</strong> 個別給与明細（タップで内訳展開）</div>
+  </div>
+
+</div>
+
+<!-- ====================== 凡例 ====================== -->
+<div class="legend">
+  <h3>📌 このモックでカバーしている MVP 機能</h3>
+  <ul>
+    <li><strong>1-A / 1-B</strong> · FeliCa打刻（共用端末）→ 完了時に当月の出勤実績と給与見込みを即時フィードバック</li>
+    <li><strong>2-A</strong> · オーナーの多店舗ダッシュボード。店舗別人件費、出勤中人数、前借り残高を一覧</li>
+    <li><strong>2-B</strong> · 前借り申請の承認フロー（オーナーのみ）。スタッフ側申請画面は v2 で追加</li>
+    <li><strong>2-C</strong> · 月末締めで全店全スタッフの支給額を一覧 → 振込用CSV出力</li>
+    <li><strong>3-A</strong> · 店長の勤怠帳簿（今日の出勤状況＋月次累計）</li>
+    <li><strong>3-B</strong> · 週次シフト編集 → 確定でLINE通知</li>
+    <li><strong>3-C</strong> · 個別給与明細。バック・源泉は欄を用意して v2 で自動化</li>
+  </ul>
+
+  <h3 style="margin-top:24px">🔮 プレゼン後に詰める論点（合意済）</h3>
+  <ul>
+    <li>バック種類と料率（テンプレ＋自由項目）／業態別ルール</li>
+    <li>売上入力フロー — 現状は手書き伝票、デジタル化の運用設計が必要</li>
+    <li>前借り上限・頻度／店長代理申請の可否</li>
+    <li>シフト希望提出 → 確定フロー、ヘルプ要請・交換</li>
+    <li>スタッフ側スマホアプリ（給与/前借り残高の本人ビュー、LINE通知）</li>
+    <li>源泉徴収（10.21%/5万円控除）自動計算</li>
+    <li>振込API直結（GMOあおぞら / freee / 全銀CSV）</li>
+    <li>本人確認書類アップロード（風営法名簿）</li>
+    <li>客管理・ボトルキープ・売上ダッシュボード等の拡張機能（店舗ごとON/OFF）</li>
+  </ul>
+</div>
+
+</body>
+</html>
