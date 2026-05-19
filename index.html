@@ -2,8 +2,10 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Honey Taste 🐝 勤怠・給与システム モック</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Honey Taste 🐝</title>
 <style>
   :root {
     --honey: #f5b800;
@@ -12,233 +14,87 @@
     --ink: #1a1410;
     --ink-soft: #3a2f25;
     --paper: #fffaf0;
+    --paper-2: #f5efe0;
     --line: #e8dcc4;
     --muted: #8a7a65;
     --ok: #2e9d6a;
     --warn: #d96b3a;
     --bad: #c8453d;
+    --tile: #ffffff;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    background: linear-gradient(135deg, #2a1f15 0%, #1a1410 100%);
-    color: var(--ink);
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
     font-family: -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif;
-    min-height: 100vh;
-    padding: 32px 24px 80px;
-  }
-  .board-header {
-    max-width: 1600px;
-    margin: 0 auto 40px;
-    color: #fff;
-    text-align: center;
-  }
-  .board-header h1 {
-    font-size: 32px;
-    margin-bottom: 8px;
-    letter-spacing: 0.04em;
-  }
-  .board-header h1 .bee { color: var(--honey); }
-  .board-header .sub {
-    color: #b8a890;
+    background: var(--paper-2);
+    color: var(--ink);
+    overscroll-behavior: none;
     font-size: 14px;
-    letter-spacing: 0.08em;
+    line-height: 1.5;
   }
-  .section-label {
-    max-width: 1600px;
-    margin: 48px auto 20px;
-    color: var(--honey);
-    font-size: 13px;
-    letter-spacing: 0.2em;
-    font-weight: 600;
-    border-bottom: 1px solid #3a2f25;
-    padding-bottom: 8px;
-  }
-  .grid {
-    max-width: 1600px;
+  #app {
+    max-width: 480px;
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 32px;
-    justify-items: center;
-  }
-
-  /* iPhone-ish frame */
-  .phone {
-    width: 320px;
-    height: 680px;
-    background: var(--ink);
-    border-radius: 40px;
-    padding: 12px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px #444;
-    position: relative;
-    flex-shrink: 0;
-  }
-  .phone::before {
-    content: "";
-    position: absolute;
-    top: 18px; left: 50%;
-    transform: translateX(-50%);
-    width: 90px; height: 24px;
-    background: #000;
-    border-radius: 14px;
-    z-index: 10;
-  }
-  .screen {
-    width: 100%;
-    height: 100%;
+    min-height: 100vh;
     background: var(--paper);
-    border-radius: 28px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
     position: relative;
+    padding-bottom: 80px;
   }
-  .phone-label {
-    text-align: center;
-    color: #b8a890;
-    margin-top: 14px;
-    font-size: 12px;
-    letter-spacing: 0.1em;
-  }
-  .phone-label strong { color: var(--honey); font-weight: 600; }
-
-  /* status bar */
-  .status-bar {
-    height: 44px;
-    flex-shrink: 0;
-  }
-
-  /* app header */
-  .app-bar {
-    padding: 8px 18px 12px;
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid var(--line);
-    flex-shrink: 0;
+    border-bottom: 2px solid var(--honey);
   }
-  .app-bar .title { font-weight: 700; font-size: 17px; }
-  .app-bar .right { font-size: 12px; color: var(--muted); }
-  .app-bar .back { color: var(--honey-deep); font-size: 14px; }
-
-  /* tab bar */
-  .tab-bar {
-    height: 64px;
-    border-top: 1px solid var(--line);
-    background: #fff;
-    display: flex;
-    flex-shrink: 0;
-  }
-  .tab {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: var(--muted);
-    gap: 2px;
-  }
-  .tab.active { color: var(--honey-deep); font-weight: 600; }
-  .tab .ico { font-size: 20px; }
-
-  .body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-  }
-
-  /* === SCREEN 1: 打刻 === */
-  .clock-screen {
-    background: linear-gradient(180deg, #2a1f15 0%, #1a1410 100%);
-    color: #fff;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 40px 24px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .clock-logo {
-    font-size: 32px;
-    margin-bottom: 4px;
-  }
-  .clock-store {
+  .nav .title { font-weight: 700; font-size: 16px; }
+  .nav .title .bee { color: var(--honey); margin-right: 4px; }
+  .nav .right { display: flex; gap: 10px; align-items: center; font-size: 12px; }
+  .nav .user-chip {
+    background: rgba(245,184,0,0.15);
+    border: 1px solid rgba(245,184,0,0.4);
     color: var(--honey);
-    font-size: 13px;
-    letter-spacing: 0.2em;
-    margin-bottom: 28px;
-  }
-  .clock-time {
-    font-size: 48px;
-    font-weight: 200;
-    color: #fff;
-    letter-spacing: 0.04em;
-  }
-  .clock-date {
-    font-size: 13px;
-    color: #b8a890;
-    margin-bottom: 36px;
-  }
-  .felica-zone {
-    width: 180px; height: 180px;
-    border-radius: 50%;
-    border: 2px dashed var(--honey);
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column;
-    color: var(--honey);
-    margin-bottom: 24px;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.04); opacity: 0.7; }
-  }
-  .felica-zone .ico { font-size: 56px; }
-  .felica-zone .txt { font-size: 12px; margin-top: 4px; letter-spacing: 0.1em; }
-  .clock-hint { color: #b8a890; font-size: 11px; }
-  .clock-alt {
-    margin-top: 20px;
-    color: var(--honey);
-    font-size: 12px;
-    text-decoration: underline;
-  }
-
-  /* === SCREEN: 打刻完了 === */
-  .clock-done {
-    flex: 1;
-    background: linear-gradient(180deg, #2a1f15 0%, #1a1410 100%);
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .clock-done .check {
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    background: var(--honey);
-    color: var(--ink);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 56px;
-    margin-bottom: 20px;
-  }
-  .clock-done h2 { font-size: 22px; margin-bottom: 6px; }
-  .clock-done .name { color: var(--honey); font-size: 16px; margin-bottom: 24px; }
-  .clock-done .info {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(245,184,0,0.2);
+    padding: 4px 10px;
     border-radius: 12px;
-    padding: 16px 24px;
-    width: 100%;
+    cursor: pointer;
   }
-  .clock-done .info .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
-  .clock-done .info .row .k { color: #b8a890; }
-  .clock-done .info .row .v { color: #fff; font-weight: 600; }
+  .nav .back-btn {
+    color: var(--honey);
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    background: #fff;
+    border-top: 1px solid var(--line);
+    display: flex;
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabbar .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    color: var(--muted);
+    font-size: 10px;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+  .tabbar .tab.active { color: var(--honey-deep); font-weight: 700; }
+  .tabbar .tab .ico { display: block; font-size: 20px; margin-bottom: 2px; }
+  .page { padding: 16px; }
+  .page h2 { font-size: 18px; margin: 0 0 4px; }
+  .page .sub { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
 
-  /* === common cards === */
   .card {
     background: #fff;
     border: 1px solid var(--line);
@@ -250,28 +106,31 @@
     font-size: 11px;
     color: var(--muted);
     letter-spacing: 0.1em;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: 600;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
-  .big-num {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--ink);
-  }
-  .big-num .unit { font-size: 13px; color: var(--muted); margin-left: 4px; }
-  .sub-num { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .card-title .link { color: var(--honey-deep); text-decoration: none; font-weight: 600; cursor: pointer; }
 
-  .row-line {
+  .row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 0;
     border-bottom: 1px solid var(--line);
-    font-size: 13px;
+    gap: 8px;
   }
-  .row-line:last-child { border-bottom: none; }
-  .row-line .name { font-weight: 600; }
-  .row-line .meta { color: var(--muted); font-size: 11px; }
+  .row:last-child { border-bottom: none; }
+  .row .name { font-weight: 600; font-size: 14px; }
+  .row .meta { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .row .right { text-align: right; }
+  .row .amt { font-weight: 700; }
+  .row.clickable { cursor: pointer; }
+  .row.clickable:active { background: var(--paper-2); }
+  .row .chev { color: var(--muted); margin-left: 4px; }
 
   .badge {
     display: inline-block;
@@ -279,13 +138,15 @@
     border-radius: 10px;
     font-size: 10px;
     font-weight: 600;
+    white-space: nowrap;
   }
   .badge.ok { background: #e0f3e8; color: var(--ok); }
   .badge.warn { background: #fde9d8; color: var(--warn); }
   .badge.bad { background: #fadcd9; color: var(--bad); }
   .badge.honey { background: var(--honey-light); color: var(--honey-deep); }
+  .badge.gray { background: #eee; color: #777; }
 
-  .btn-primary {
+  .btn {
     background: var(--honey);
     color: var(--ink);
     border: none;
@@ -296,88 +157,68 @@
     font-size: 14px;
     margin-top: 8px;
     cursor: pointer;
+    display: block;
   }
-  .btn-ghost {
+  .btn:active { opacity: 0.7; }
+  .btn.ghost {
     background: transparent;
     color: var(--honey-deep);
     border: 1px solid var(--honey);
-    padding: 10px;
-    border-radius: 10px;
-    width: 100%;
-    font-weight: 600;
-    font-size: 13px;
-    margin-top: 8px;
-    cursor: pointer;
+  }
+  .btn.danger {
+    background: #fadcd9;
+    color: var(--bad);
+  }
+  .btn.dark {
+    background: var(--ink);
+    color: var(--honey);
   }
   .btn-row { display: flex; gap: 8px; }
   .btn-row > * { flex: 1; }
 
-  /* shift grid */
-  .shift-week {
-    display: grid;
-    grid-template-columns: 60px repeat(7, 1fr);
-    gap: 2px;
-    font-size: 10px;
-  }
-  .shift-week .h {
-    text-align: center;
-    color: var(--muted);
-    padding: 4px 0;
-    font-weight: 600;
-  }
-  .shift-week .name-cell {
-    padding: 6px 4px;
-    font-size: 11px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-  }
-  .shift-week .cell {
-    aspect-ratio: 1;
-    background: #f5efe0;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    font-size: 10px;
-  }
-  .shift-week .cell.on {
-    background: var(--honey);
-    color: var(--ink);
-    font-weight: 700;
-  }
-  .shift-week .cell.holiday {
-    background: #f5efe0;
-    color: #c0b095;
-  }
-
-  /* store switcher */
-  .store-switch {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 14px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-  }
-  .store-pill {
-    flex-shrink: 0;
-    padding: 6px 12px;
-    border-radius: 14px;
-    background: #fff;
+  label { display: block; font-size: 11px; color: var(--muted); margin: 12px 0 4px; font-weight: 600; letter-spacing: 0.05em; }
+  input, select, textarea {
+    width: 100%;
+    padding: 12px;
     border: 1px solid var(--line);
-    font-size: 12px;
-    color: var(--muted);
-    white-space: nowrap;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #fff;
+    font-family: inherit;
   }
-  .store-pill.active {
-    background: var(--ink);
-    color: var(--honey);
-    border-color: var(--ink);
-    font-weight: 600;
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--honey); border-color: var(--honey); }
+  textarea { min-height: 80px; resize: vertical; }
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
   }
+  .checkbox-row .col-l { flex: 1; padding-right: 12px; }
+  .checkbox-row .col-l .label { font-weight: 600; color: var(--ink); margin: 0; letter-spacing: 0; }
+  .checkbox-row .col-l .desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .switch {
+    position: relative;
+    width: 50px; height: 28px;
+    background: #ddd;
+    border-radius: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left 0.2s;
+  }
+  .switch.on { background: var(--honey); }
+  .switch.on::after { left: 24px; }
 
-  /* dashboard tiles */
   .tile-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -385,70 +226,18 @@
     margin-bottom: 12px;
   }
   .tile {
-    background: #fff;
+    background: var(--tile);
     border: 1px solid var(--line);
     border-radius: 12px;
     padding: 12px;
   }
-  .tile .label {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
-  }
-  .tile .num {
-    font-size: 20px;
-    font-weight: 700;
-  }
+  .tile .label { font-size: 10px; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 4px; }
+  .tile .num { font-size: 20px; font-weight: 700; }
   .tile .num .yen { font-size: 11px; color: var(--muted); font-weight: 400; }
-  .tile.dark {
-    background: linear-gradient(135deg, #2a1f15 0%, #1a1410 100%);
-    color: #fff;
-    border: none;
-  }
+  .tile.dark { background: linear-gradient(135deg, var(--ink-soft) 0%, var(--ink) 100%); color: #fff; border: none; }
   .tile.dark .label { color: var(--honey); }
-
-  /* approval list */
-  .approval-item {
-    background: #fff;
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--warn);
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 10px;
-  }
-  .approval-item .top {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
-  }
-  .approval-item .who { font-weight: 700; font-size: 14px; }
-  .approval-item .amount { font-weight: 700; color: var(--honey-deep); font-size: 16px; }
-  .approval-item .reason { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
-  .approval-item .actions { display: flex; gap: 6px; }
-  .approval-item button {
-    flex: 1;
-    padding: 8px;
-    border-radius: 8px;
-    border: none;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .approval-item .approve { background: var(--honey); color: var(--ink); }
-  .approval-item .reject { background: #f5efe0; color: var(--ink-soft); }
-
-  /* payroll list */
-  .payroll-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-    align-items: center;
-  }
-  .payroll-row .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .payroll-row .amt { font-weight: 700; font-size: 15px; }
-  .payroll-row .amt-sub { font-size: 10px; color: var(--muted); text-align: right; }
+  .tile.honey { background: linear-gradient(135deg, var(--honey) 0%, var(--honey-deep) 100%); color: var(--ink); border: none; }
+  .tile.honey .label { color: var(--ink-soft); opacity: 0.7; }
 
   .summary-box {
     background: linear-gradient(135deg, var(--honey) 0%, var(--honey-deep) 100%);
@@ -461,517 +250,1918 @@
   .summary-box .big { font-size: 28px; font-weight: 700; margin-top: 4px; }
   .summary-box .sub { font-size: 11px; opacity: 0.8; margin-top: 4px; }
 
-  /* legend */
-  .legend {
-    max-width: 1600px;
-    margin: 60px auto 0;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(245,184,0,0.2);
-    border-radius: 16px;
-    padding: 24px 32px;
-    color: #e8dcc4;
-    font-size: 13px;
-    line-height: 1.8;
+  .store-switch {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
   }
-  .legend h3 { color: var(--honey); margin-bottom: 12px; font-size: 14px; letter-spacing: 0.1em; }
-  .legend ul { padding-left: 20px; }
-  .legend li { margin-bottom: 4px; }
+  .store-switch::-webkit-scrollbar { display: none; }
+  .store-pill {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .store-pill.active {
+    background: var(--ink);
+    color: var(--honey);
+    border-color: var(--ink);
+    font-weight: 600;
+  }
+
+  .shift-week-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .shift-week {
+    display: grid;
+    grid-template-columns: 70px repeat(7, minmax(40px, 1fr));
+    gap: 2px;
+    font-size: 10px;
+    min-width: 380px;
+  }
+  .shift-week .h { text-align: center; color: var(--muted); padding: 4px 0; font-weight: 600; }
+  .shift-week .h.sun { color: var(--bad); }
+  .shift-week .h.sat { color: #4a6fa5; }
+  .shift-week .name-cell {
+    padding: 6px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  .shift-week .cell {
+    aspect-ratio: 1;
+    background: var(--paper-2);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 9px;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+  }
+  .shift-week .cell.on { background: var(--honey); color: var(--ink); font-weight: 700; }
+  .shift-week .cell.req { background: var(--honey-light); color: var(--honey-deep); border: 1px dashed var(--honey); }
+
+  .kiosk {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #2a1f15 0%, #0f0a06 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 20px;
+    text-align: center;
+  }
+  .kiosk-logo { font-size: 36px; }
+  .kiosk-store {
+    color: var(--honey);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    margin-bottom: 24px;
+  }
+  .kiosk-time { font-size: 56px; font-weight: 200; letter-spacing: 0.04em; line-height: 1; }
+  .kiosk-date { font-size: 13px; color: #b8a890; margin-bottom: 28px; }
+  .felica-zone {
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    border: 2px dashed var(--honey);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    color: var(--honey);
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+    cursor: pointer;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.04); opacity: 0.75; }
+  }
+  .felica-zone .ico { font-size: 64px; }
+  .felica-zone .txt { font-size: 12px; margin-top: 4px; letter-spacing: 0.1em; }
+  .kiosk-pin {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 240px;
+    margin-top: 20px;
+  }
+  .kiosk-pin button {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border: 1px solid rgba(245,184,0,0.2);
+    border-radius: 50%;
+    aspect-ratio: 1;
+    font-size: 22px;
+    cursor: pointer;
+  }
+  .kiosk-pin button:active { background: var(--honey); color: var(--ink); }
+  .kiosk-display {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(245,184,0,0.2);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 28px;
+    letter-spacing: 0.4em;
+    color: var(--honey);
+    margin-top: 16px;
+    min-width: 200px;
+    min-height: 50px;
+    text-align: center;
+  }
+  .kiosk-exit {
+    position: absolute;
+    top: 12px; right: 12px;
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 100;
+  }
+  .kiosk-result {
+    background: rgba(245,184,0,0.08);
+    border: 1px solid var(--honey);
+    border-radius: 14px;
+    padding: 24px;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 320px;
+  }
+  .kiosk-result .check {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--honey);
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+    margin: 0 auto 16px;
+  }
+  .kiosk-result h2 { font-size: 22px; margin: 0 0 4px; }
+  .kiosk-result .name { color: var(--honey); font-size: 16px; margin-bottom: 16px; text-align: center; }
+  .kiosk-result .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid rgba(245,184,0,0.15); }
+  .kiosk-result .info-row:last-child { border-bottom: none; }
+  .kiosk-result .info-row .k { color: #b8a890; }
+  .kiosk-result .info-row .v { color: #fff; font-weight: 600; }
+
+  .approval-item {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--warn);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .approval-item.approved { border-left-color: var(--ok); opacity: 0.7; }
+  .approval-item.rejected { border-left-color: var(--bad); opacity: 0.6; }
+  .approval-item .top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .approval-item .who { font-weight: 700; font-size: 14px; }
+  .approval-item .amount { font-weight: 700; color: var(--honey-deep); font-size: 16px; }
+  .approval-item .reason { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .approval-item .actions { display: flex; gap: 6px; }
+  .approval-item button {
+    flex: 1; padding: 8px; border-radius: 8px; border: none;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .approval-item .approve { background: var(--honey); color: var(--ink); }
+  .approval-item .reject { background: var(--paper-2); color: var(--ink-soft); }
+
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal {
+    background: var(--paper);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: slideUp 0.2s ease-out;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal h3 { margin: 0 0 12px; }
+
+  .segmented {
+    display: flex;
+    background: var(--paper-2);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 12px;
+  }
+  .segmented button {
+    flex: 1;
+    padding: 8px;
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .segmented button.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+  .toast {
+    position: fixed;
+    bottom: 96px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    z-index: 200;
+    animation: fadeIn 0.2s;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  .login {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #2a1f15 0%, #0f0a06 100%);
+    color: #fff;
+    padding: 60px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .login h1 { color: var(--honey); font-size: 28px; margin: 0 0 6px; }
+  .login .tag { color: #b8a890; font-size: 12px; letter-spacing: 0.2em; margin-bottom: 40px; }
+  .login .role-card {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(245,184,0,0.3);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .login .role-card:active { background: rgba(245,184,0,0.1); }
+  .login .role-card .ico { font-size: 32px; }
+  .login .role-card .ttl { color: var(--honey); font-weight: 700; font-size: 16px; }
+  .login .role-card .desc { color: #b8a890; font-size: 11px; margin-top: 2px; }
+  .login .demo-note {
+    margin-top: 24px;
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .login .demo-note button {
+    background: none; color: var(--honey); border: 1px solid rgba(245,184,0,0.4);
+    padding: 6px 14px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-top: 6px;
+  }
+
+  .picker-list { margin-top: 8px; }
+  .picker-item {
+    background: #fff; border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px; margin-bottom: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .picker-item .who .name { font-weight: 700; }
+  .picker-item .who .meta { font-size: 11px; color: var(--muted); }
+
+  .sale-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 6px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+    font-size: 12px;
+  }
+  .sale-row .t { color: var(--muted); font-size: 10px; }
+  .sale-row .v { font-weight: 600; }
+  .sale-row .del { background: none; border: none; color: var(--bad); font-size: 16px; cursor: pointer; }
+
+  .empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .empty .ico { font-size: 36px; opacity: 0.4; margin-bottom: 8px; display: block; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 16px 0; }
+  .hint { font-size: 11px; color: var(--muted); margin: 6px 0; }
 </style>
 </head>
 <body>
+<div id="app"></div>
+<div id="toast-host"></div>
+<div id="modal-host"></div>
 
-<div class="board-header">
-  <h1>Honey Taste <span class="bee">🐝</span> 勤怠・給与システム</h1>
-  <div class="sub">MVP MOCKUP &nbsp;·&nbsp; Mobile-first &nbsp;·&nbsp; Multi-store</div>
-</div>
+<script>
+const STORAGE_KEY = 'honeytaste_v1';
 
-<!-- ====================== 打刻 ====================== -->
-<div class="section-label">01 · 打刻（FeliCa / 共用端末）</div>
-<div class="grid">
+function defaultFeatures(type) {
+  return {
+    sales: type === 'snack' || type === 'esthe',
+    backs: type === 'snack' || type === 'esthe',
+    sourceTax: type === 'snack',
+    dayPay: type === 'snack',
+    lineNotify: true,
+    customers: false,
+    bottles: false,
+    staffSelfShift: true,
+    advances: true,
+  };
+}
 
-  <div>
-    <div class="phone">
-      <div class="screen">
-        <div class="status-bar"></div>
-        <div class="clock-screen">
-          <div class="clock-logo">🐝</div>
-          <div class="clock-store">HONEY TASTE · 本店</div>
-          <div class="clock-time">21:34</div>
-          <div class="clock-date">2026.05.19 (月)</div>
-          <div class="felica-zone">
-            <div class="ico">📱</div>
-            <div class="txt">TOUCH HERE</div>
-          </div>
-          <div class="clock-hint">交通系IC・社員証をタッチ</div>
-          <div class="clock-alt">パスコードで打刻</div>
-        </div>
+function seed() {
+  const stores = [
+    { id: 's1', name: 'Honey Taste 本店', type: 'snack', open: '20:00', close: '03:00', features: defaultFeatures('snack') },
+    { id: 's2', name: 'Bar Mitsu',      type: 'bar',   open: '19:00', close: '02:00', features: defaultFeatures('bar') },
+    { id: 's3', name: 'Esthe Lumi',     type: 'esthe', open: '11:00', close: '22:00', features: defaultFeatures('esthe') },
+  ];
+  const backRules = [
+    { storeId: 's1', type: 'dohan',  label: '同伴',         kind: 'flat',    value: 3000 },
+    { storeId: 's1', type: 'shimei', label: '指名',         kind: 'flat',    value: 1500 },
+    { storeId: 's1', type: 'drink',  label: 'ドリンクバック', kind: 'percent', value: 30 },
+    { storeId: 's1', type: 'bottle', label: 'ボトルバック',   kind: 'percent', value: 20 },
+    { storeId: 's3', type: 'course', label: 'コース歩合',     kind: 'percent', value: 25 },
+  ];
+  const staff = [
+    { id: 'u01', name: 'あおい',   storeId: 's1', role: 'staff',   hourlyWage: 2400, nightWage: 3000, code: '0001', felicaId: 'IC-0001' },
+    { id: 'u02', name: 'れな',     storeId: 's1', role: 'staff',   hourlyWage: 2800, nightWage: 3500, code: '0002', felicaId: 'IC-0002' },
+    { id: 'u03', name: 'みお',     storeId: 's1', role: 'staff',   hourlyWage: 2200, nightWage: 2800, code: '0003', felicaId: 'IC-0003' },
+    { id: 'u04', name: 'さくら',   storeId: 's1', role: 'staff',   hourlyWage: 2200, nightWage: 2800, code: '0004', felicaId: 'IC-0004' },
+    { id: 'u05', name: 'ゆい',     storeId: 's1', role: 'staff',   hourlyWage: 2600, nightWage: 3200, code: '0005', felicaId: 'IC-0005' },
+    { id: 'u06', name: '店長まり', storeId: 's1', role: 'manager', hourlyWage: 3000, nightWage: 3500, code: '1001', felicaId: 'IC-1001' },
+    { id: 'u11', name: 'ケンジ',   storeId: 's2', role: 'staff',   hourlyWage: 1800, nightWage: 2200, code: '0011', felicaId: 'IC-0011' },
+    { id: 'u12', name: 'ユウタ',   storeId: 's2', role: 'staff',   hourlyWage: 1800, nightWage: 2200, code: '0012', felicaId: 'IC-0012' },
+    { id: 'u13', name: 'ハル',     storeId: 's2', role: 'staff',   hourlyWage: 1700, nightWage: 2100, code: '0013', felicaId: 'IC-0013' },
+    { id: 'u14', name: '店長タカシ', storeId: 's2', role: 'manager', hourlyWage: 2500, nightWage: 2800, code: '1011', felicaId: 'IC-1011' },
+    { id: 'u21', name: 'ナナミ',   storeId: 's3', role: 'staff',   hourlyWage: 1700, nightWage: 1700, code: '0021', felicaId: 'IC-0021' },
+    { id: 'u22', name: 'リサ',     storeId: 's3', role: 'staff',   hourlyWage: 1700, nightWage: 1700, code: '0022', felicaId: 'IC-0022' },
+    { id: 'u23', name: '店長ミキ', storeId: 's3', role: 'manager', hourlyWage: 2200, nightWage: 2200, code: '1021', felicaId: 'IC-1021' },
+    { id: 'owner', name: 'オーナー', storeId: null, role: 'owner', hourlyWage: 0, nightWage: 0, code: '9999', felicaId: 'IC-9999' },
+  ];
+
+  const today = new Date();
+  const shifts = [];
+  const punches = [];
+  const sales = [];
+  let pid = 1, shid = 1, slid = 1;
+
+  for (let dayOffset = -20; dayOffset <= 7; dayOffset++) {
+    const d = new Date(today); d.setDate(d.getDate() + dayOffset);
+    const dateStr = d.toISOString().slice(0,10);
+    const dow = d.getDay();
+
+    staff.forEach(s => {
+      if (s.role === 'owner') return;
+      const store = stores.find(st => st.id === s.storeId);
+      if (!store) return;
+      const seedN = (s.id.charCodeAt(2) + dow) % 7;
+      const works = seedN > 1;
+      if (!works) return;
+      const startHour = store.type === 'esthe' ? 11 + (seedN % 3) : 20 + (seedN % 2);
+      const endHour = store.type === 'esthe' ? 19 + (seedN % 3) : (startHour + 5 + (seedN % 2));
+      shifts.push({
+        id: 'sh' + (shid++),
+        staffId: s.id,
+        date: dateStr,
+        startHour, endHour,
+        status: dayOffset > 0 ? 'planned' : 'confirmed'
+      });
+
+      if (dayOffset < 0 && (seedN % 10) !== 0) {
+        const ciDate = new Date(d); ciDate.setHours(startHour, (seedN*7)%30, 0, 0);
+        const coDate = new Date(d); coDate.setHours(endHour % 24, (seedN*11)%30, 0, 0);
+        if (endHour >= 24) coDate.setDate(coDate.getDate() + 1);
+        punches.push({
+          id: 'p' + (pid++),
+          staffId: s.id,
+          storeId: s.storeId,
+          clockIn: ciDate.toISOString(),
+          clockOut: coDate.toISOString(),
+        });
+
+        if (store.features.sales && store.features.backs && store.type === 'snack') {
+          const dohanCount = (seedN % 3) === 0 ? 1 : 0;
+          const shimeiCount = (seedN % 2) + 1;
+          const drinkAmt = 3000 + ((seedN * 1000) % 8000);
+          if (dohanCount > 0) sales.push({ id: 'sl'+(slid++), staffId: s.id, storeId: s.storeId, date: dateStr, type: 'dohan',  amount: 0, count: dohanCount });
+          if (shimeiCount > 0) sales.push({ id: 'sl'+(slid++), staffId: s.id, storeId: s.storeId, date: dateStr, type: 'shimei', amount: 0, count: shimeiCount });
+          sales.push({ id: 'sl'+(slid++), staffId: s.id, storeId: s.storeId, date: dateStr, type: 'drink', amount: drinkAmt, count: 0 });
+        }
+      }
+    });
+
+    if (dayOffset === 0) {
+      [staff[0], staff[2], staff[6]].forEach(s => {
+        const store = stores.find(st => st.id === s.storeId);
+        if (!store) return;
+        const ci = new Date(d); ci.setHours(store.type === 'esthe' ? 13 : 21, 15, 0, 0);
+        punches.push({ id: 'p'+(pid++), staffId: s.id, storeId: s.storeId, clockIn: ci.toISOString(), clockOut: null });
+      });
+    }
+  }
+
+  const advances = [
+    { id: 'a1', staffId: 'u01', amount: 30000, reason: '家賃支払いのため', status: 'pending', requestedAt: new Date(Date.now()-3600000*8).toISOString() },
+    { id: 'a2', staffId: 'u02', amount: 50000, reason: '帰省費用',         status: 'pending', requestedAt: new Date(Date.now()-3600000*2).toISOString() },
+    { id: 'a3', staffId: 'u11', amount: 20000, reason: '友人結婚式',       status: 'pending', requestedAt: new Date(Date.now()-3600000*1).toISOString() },
+    { id: 'a0', staffId: 'u02', amount: 20000, reason: '前月分',           status: 'approved', requestedAt: new Date(Date.now()-86400000*15).toISOString(), approvedAt: new Date(Date.now()-86400000*14).toISOString() },
+  ];
+
+  return { stores, staff, shifts, punches, sales, advances, backRules };
+}
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+function resetDB() { localStorage.removeItem(STORAGE_KEY); db = seed(); save(); }
+
+let db = loadDB() || (function(){ const s = seed(); localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); return s; })();
+
+const SESSION_KEY = 'honeytaste_session_v1';
+let session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+function setSession(s) { session = s; sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+function logout() { sessionStorage.removeItem(SESSION_KEY); session = null; render(); }
+
+const yen = n => '¥ ' + Math.round(n).toLocaleString();
+const pad = n => String(n).padStart(2,'0');
+const fmtTime = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+const fmtDate = d => `${d.getMonth()+1}/${d.getDate()}`;
+const fmtDateLong = d => `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
+const dowNames = ['日','月','火','水','木','金','土'];
+
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function thisMonth() { return new Date().toISOString().slice(0,7); }
+function monthOf(iso) { return iso.slice(0,7); }
+
+function staffById(id) { return db.staff.find(s => s.id === id); }
+function storeById(id) { return db.stores.find(s => s.id === id); }
+function activePunch(staffId) { return db.punches.find(p => p.staffId === staffId && !p.clockOut); }
+
+function nightHours(clockIn, clockOut) {
+  let total = 0;
+  if (clockOut <= clockIn) return 0;
+  const step = 5 * 60 * 1000;
+  for (let t = clockIn.getTime(); t < clockOut.getTime(); t += step) {
+    const h = new Date(t).getHours();
+    if (h >= 22 || h < 5) total += step / 3600000;
+  }
+  return total;
+}
+
+function calcStaffMonth(staffId, ymStr) {
+  const s = staffById(staffId);
+  if (!s) return null;
+  const store = storeById(s.storeId);
+  const features = store ? store.features : defaultFeatures('bar');
+  const monthPunches = db.punches.filter(p => p.staffId === staffId && p.clockIn.slice(0,7) === ymStr && p.clockOut);
+  let totalH = 0, nightH = 0, days = 0;
+  monthPunches.forEach(p => {
+    const ci = new Date(p.clockIn); const co = new Date(p.clockOut);
+    totalH += (co - ci) / 3600000;
+    nightH += nightHours(ci, co);
+    days++;
+  });
+  const dayH = Math.max(0, totalH - nightH);
+  const baseDay = dayH * s.hourlyWage;
+  const baseNight = nightH * s.nightWage;
+  const base = baseDay + baseNight;
+
+  let backsTotal = 0;
+  const backLines = [];
+  if (features.backs) {
+    const rules = db.backRules.filter(r => r.storeId === s.storeId);
+    rules.forEach(r => {
+      const mySales = db.sales.filter(sl => sl.staffId === staffId && sl.type === r.type && sl.date.slice(0,7) === ymStr);
+      if (mySales.length === 0) return;
+      let amount = 0;
+      if (r.kind === 'flat') {
+        const cnt = mySales.reduce((sum,x) => sum + (x.count || 0), 0);
+        amount = cnt * r.value;
+        if (cnt > 0) backLines.push({ label: r.label, detail: `${cnt}件 × ¥${r.value}`, amount });
+      } else {
+        const total = mySales.reduce((sum,x) => sum + (x.amount || 0), 0);
+        amount = Math.round(total * r.value / 100);
+        if (total > 0) backLines.push({ label: r.label, detail: `売上¥${total.toLocaleString()} × ${r.value}%`, amount });
+      }
+      backsTotal += amount;
+    });
+  }
+
+  const advUsed = db.advances
+    .filter(a => a.staffId === staffId && a.status === 'approved' && monthOf(a.approvedAt || a.requestedAt) === ymStr)
+    .reduce((sum, a) => sum + a.amount, 0);
+
+  const gross = base + backsTotal;
+  const tax = features.sourceTax && gross > 50000 ? Math.round((gross - 50000) * 0.1021) : 0;
+  const net = gross - tax - advUsed;
+
+  return { staffId, totalH, nightH, dayH, days, base, baseDay, baseNight, backsTotal, backLines, advUsed, tax, gross, net, features };
+}
+
+function toast(msg) {
+  const host = document.getElementById('toast-host');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+function openModal(html) {
+  const host = document.getElementById('modal-host');
+  host.innerHTML = `<div class="modal-bg" data-modal-close><div class="modal">${html}</div></div>`;
+  host.querySelector('[data-modal-close]').onclick = (e) => { if (e.target.hasAttribute('data-modal-close')) closeModal(); };
+  bindActions();
+}
+function closeModal() { document.getElementById('modal-host').innerHTML = ''; }
+
+function render() {
+  const app = document.getElementById('app');
+  if (!session) { app.innerHTML = viewLogin(); bindActions(); return; }
+
+  if (session.view === 'kiosk') { app.innerHTML = viewKiosk(); bindActions(); return; }
+  if (session.view === 'kioskResult') { app.innerHTML = viewKioskResult(); bindActions(); return; }
+
+  const user = staffById(session.userId);
+  if (!user) { logout(); return; }
+
+  const role = user.role;
+  const view = session.view || homeFor(role);
+
+  const views = {
+    ownerHome: viewOwnerHome,
+    ownerStaff: viewOwnerStaff,
+    ownerStaffEdit: viewOwnerStaffEdit,
+    ownerShifts: viewShifts,
+    ownerAttendance: viewAttendance,
+    ownerPayroll: viewPayroll,
+    ownerPayslip: viewPayslip,
+    ownerAdvances: viewAdvances,
+    ownerSales: viewSales,
+    ownerStores: viewStores,
+    ownerSettings: viewSettings,
+    ownerBackRules: viewBackRules,
+
+    managerHome: viewManagerHome,
+    managerAttendance: viewAttendance,
+    managerShifts: viewShifts,
+    managerStaff: viewOwnerStaff,
+    managerSales: viewSales,
+    managerPayroll: viewPayroll,
+
+    staffHome: viewStaffHome,
+    staffPayslip: viewPayslip,
+    staffShifts: viewStaffShifts,
+    staffAdvance: viewStaffAdvance,
+  };
+
+  const renderer = views[view] || views[homeFor(role)];
+  const body = renderer ? renderer(user) : '<div class="page"><div class="empty">画面が見つかりません</div></div>';
+
+  app.innerHTML = topNav(user) + body + tabBar(user, view);
+  bindActions();
+}
+
+function homeFor(role) {
+  return role === 'owner' ? 'ownerHome' : role === 'manager' ? 'managerHome' : 'staffHome';
+}
+
+function topNav(user) {
+  const isHome = session.view === homeFor(user.role) || !session.view;
+  return `
+    <div class="nav">
+      <div style="display:flex;align-items:center;gap:8px">
+        ${!isHome ? '<button class="back-btn" data-action="back">‹ 戻る</button>' : '<span class="title"><span class="bee">🐝</span>Honey Taste</span>'}
+      </div>
+      <div class="right">
+        <span class="user-chip" data-action="switchUser">${user.name} ▾</span>
       </div>
     </div>
-    <div class="phone-label"><strong>1-A</strong> 打刻待機（共用端末）</div>
-  </div>
+  `;
+}
 
-  <div>
-    <div class="phone">
-      <div class="screen">
-        <div class="status-bar"></div>
-        <div class="clock-done">
-          <div class="check">✓</div>
-          <h2>出勤しました</h2>
-          <div class="name">あおい さん</div>
-          <div class="info">
-            <div class="row"><span class="k">店舗</span><span class="v">本店</span></div>
-            <div class="row"><span class="k">出勤時刻</span><span class="v">21:34</span></div>
-            <div class="row"><span class="k">今月の出勤</span><span class="v">12 日 / 78.5h</span></div>
-            <div class="row"><span class="k">今月の見込</span><span class="v">¥ 198,400</span></div>
+function tabBar(user, view) {
+  const tabsMap = {
+    owner: [
+      { id: 'ownerHome',     ico:'📊', label:'ホーム' },
+      { id: 'ownerShifts',   ico:'📅', label:'シフト' },
+      { id: 'ownerSales',    ico:'💰', label:'売上' },
+      { id: 'ownerPayroll',  ico:'💴', label:'給与' },
+      { id: 'ownerSettings', ico:'⚙️', label:'設定' },
+    ],
+    manager: [
+      { id: 'managerHome',       ico:'🏠', label:'ホーム' },
+      { id: 'managerAttendance', ico:'📋', label:'勤怠' },
+      { id: 'managerShifts',     ico:'📅', label:'シフト' },
+      { id: 'managerSales',      ico:'💰', label:'売上' },
+      { id: 'managerStaff',      ico:'👥', label:'スタッフ' },
+    ],
+    staff: [
+      { id: 'staffHome',    ico:'🏠', label:'ホーム' },
+      { id: 'staffShifts',  ico:'📅', label:'シフト' },
+      { id: 'staffPayslip', ico:'💴', label:'給与' },
+      { id: 'staffAdvance', ico:'💳', label:'前借り' },
+    ],
+  };
+  const tabs = tabsMap[user.role];
+  return `<div class="tabbar">${tabs.map(t => `
+    <button class="tab ${view === t.id ? 'active' : ''}" data-action="nav" data-view="${t.id}">
+      <span class="ico">${t.ico}</span>${t.label}
+    </button>`).join('')}</div>`;
+}
+
+function viewLogin() {
+  return `
+    <div class="login">
+      <h1>🐝 Honey Taste</h1>
+      <div class="tag">ATTENDANCE & PAYROLL</div>
+
+      <div class="role-card" data-action="loginAs" data-userid="owner">
+        <div class="ico">👑</div>
+        <div><div class="ttl">オーナーとしてログイン</div><div class="desc">多店舗ダッシュボード・承認・給与確定</div></div>
+      </div>
+      <div class="role-card" data-action="pickManager">
+        <div class="ico">🎯</div>
+        <div><div class="ttl">店長としてログイン</div><div class="desc">自店の勤怠・シフト・売上管理</div></div>
+      </div>
+      <div class="role-card" data-action="pickStaff">
+        <div class="ico">👤</div>
+        <div><div class="ttl">スタッフとしてログイン</div><div class="desc">自分のシフト・給与・前借り</div></div>
+      </div>
+      <div class="role-card" data-action="openKiosk" style="border-color:rgba(245,184,0,0.6);background:rgba(245,184,0,0.08)">
+        <div class="ico">📱</div>
+        <div><div class="ttl">打刻端末モード</div><div class="desc">店舗の共用iPad / iPhone で常時起動</div></div>
+      </div>
+
+      <div class="demo-note">
+        デモ用ローカルデータで動作中。<br>
+        全データはこの端末内に保存されます。<br>
+        <button data-action="resetData">データを初期化</button>
+      </div>
+    </div>
+  `;
+}
+
+function viewKiosk() {
+  const params = session.params || {};
+  const store = storeById(params.storeId) || db.stores[0];
+  const pin = params.pin || '';
+  const now = new Date();
+  return `
+    <button class="kiosk-exit" data-action="logout">× 終了</button>
+    <div class="kiosk">
+      <div class="kiosk-logo">🐝</div>
+      <div class="kiosk-store">${store.name.toUpperCase()}</div>
+      <div class="kiosk-time" id="kiosk-clock">${fmtTime(now)}</div>
+      <div class="kiosk-date">${fmtDateLong(now)} (${dowNames[now.getDay()]})</div>
+
+      <div class="felica-zone" data-action="felicaTap">
+        <div class="ico">📱</div>
+        <div class="txt">TOUCH HERE</div>
+      </div>
+      <div style="color:#b8a890;font-size:11px;margin-bottom:14px">交通系IC・社員証をタッチ</div>
+
+      <div class="kiosk-display">${pin.padEnd(4,'·').split('').join(' ')}</div>
+      <div class="kiosk-pin">
+        ${[1,2,3,4,5,6,7,8,9].map(n => `<button data-action="pin" data-n="${n}">${n}</button>`).join('')}
+        <button data-action="pinClear">⌫</button>
+        <button data-action="pin" data-n="0">0</button>
+        <button data-action="pinSubmit" style="background:rgba(245,184,0,0.3)">✓</button>
+      </div>
+      <div style="color:#b8a890;font-size:10px;margin-top:14px">4桁コードで打刻 (デモ: 0001=あおい / 0002=れな / 1001=店長まり)</div>
+
+      <div style="margin-top:20px">
+        <select id="kiosk-store-sel" style="background:transparent;color:var(--honey);border:1px solid rgba(245,184,0,0.3);padding:6px;border-radius:6px;font-size:11px">
+          ${db.stores.map(s => `<option value="${s.id}" ${s.id===store.id?'selected':''}>${s.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+  `;
+}
+function viewKioskResult() {
+  const { punch, staffId: sId, action, storeId } = session.params;
+  const s = staffById(sId);
+  const store = storeById(storeId);
+  const isOut = action === 'out';
+  const month = calcStaffMonth(s.id, thisMonth());
+  return `
+    <div class="kiosk">
+      <div class="kiosk-logo" style="margin-bottom:8px">🐝</div>
+      <div class="kiosk-result">
+        <div class="check">${isOut ? '👋' : '✓'}</div>
+        <h2 style="text-align:center">${isOut ? '退勤しました' : '出勤しました'}</h2>
+        <div class="name">${s.name} さん</div>
+        <div class="info-row"><span class="k">店舗</span><span class="v">${store.name}</span></div>
+        <div class="info-row"><span class="k">${isOut ? '退勤' : '出勤'}時刻</span><span class="v">${fmtTime(new Date(isOut ? punch.clockOut : punch.clockIn))}</span></div>
+        ${isOut ? `<div class="info-row"><span class="k">本日の勤務</span><span class="v">${((new Date(punch.clockOut) - new Date(punch.clockIn))/3600000).toFixed(1)} h</span></div>` : ''}
+        <div class="info-row"><span class="k">今月の出勤</span><span class="v">${month.days}日 / ${month.totalH.toFixed(1)}h</span></div>
+        <div class="info-row"><span class="k">今月の見込</span><span class="v">${yen(month.net)}</span></div>
+      </div>
+      <div style="color:#b8a890;font-size:11px;margin-top:20px">4秒後に戻ります...</div>
+    </div>
+  `;
+}
+
+function viewOwnerHome(user) {
+  const ym = thisMonth();
+  const activeStoreId = session.params.storeId || 'all';
+  const storesShown = activeStoreId === 'all' ? db.stores : db.stores.filter(s => s.id === activeStoreId);
+  const staffShown = db.staff.filter(s => s.role !== 'owner' && (activeStoreId === 'all' || s.storeId === activeStoreId));
+  const totalPayroll = staffShown.reduce((sum, s) => sum + calcStaffMonth(s.id, ym).net, 0);
+  const totalAdvances = db.advances.filter(a => a.status === 'approved' && staffShown.some(s => s.id === a.staffId)).reduce((s,a) => s + a.amount, 0);
+  const pendingAdv = db.advances.filter(a => a.status === 'pending').length;
+  const activeNow = db.punches.filter(p => !p.clockOut && staffShown.some(s => s.id === p.staffId)).length;
+  const today = todayISO();
+  const ev = new Date(); ev.setMonth(ev.getMonth()+1, 0);
+  const daysToMonthEnd = ev.getDate() - new Date().getDate();
+
+  return `
+    <div class="page">
+      <div class="store-switch">
+        <button class="store-pill ${activeStoreId==='all'?'active':''}" data-action="setStore" data-store="all">全店</button>
+        ${db.stores.map(s => `<button class="store-pill ${activeStoreId===s.id?'active':''}" data-action="setStore" data-store="${s.id}">${s.name.replace('Honey Taste ','')}</button>`).join('')}
+      </div>
+
+      <div class="summary-box">
+        <div class="lbl">今月の人件費 見込み (${ym})</div>
+        <div class="big">${yen(totalPayroll)}</div>
+        <div class="sub">在籍 ${staffShown.length}名 ・ 前借相殺後</div>
+      </div>
+
+      <div class="tile-grid">
+        <div class="tile"><div class="label">本日出勤中</div><div class="num">${activeNow}<span class="yen"> 名</span></div></div>
+        <div class="tile" data-action="nav" data-view="ownerAdvances" style="cursor:pointer">
+          <div class="label">承認待ち</div>
+          <div class="num">${pendingAdv}<span class="yen"> 件</span></div>
+        </div>
+        <div class="tile dark"><div class="label">前借り残高</div><div class="num">${yen(totalAdvances)}</div></div>
+        <div class="tile"><div class="label">月末締めまで</div><div class="num">${daysToMonthEnd}<span class="yen"> 日</span></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">店舗別 人件費 <span class="link" data-action="nav" data-view="ownerPayroll">明細 ›</span></div>
+        ${storesShown.map(st => {
+          const sStaff = db.staff.filter(s => s.role !== 'owner' && s.storeId === st.id);
+          const sPay = sStaff.reduce((sum, s) => sum + calcStaffMonth(s.id, ym).net, 0);
+          const sActive = db.punches.filter(p => !p.clockOut && sStaff.some(s => s.id === p.staffId)).length;
+          return `
+            <div class="row clickable" data-action="setStore" data-store="${st.id}">
+              <div><div class="name">${st.name}</div><div class="meta">在籍 ${sStaff.length}名 ・ 出勤中 ${sActive}名</div></div>
+              <div class="right"><div class="amt">${yen(sPay)}</div></div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="card">
+        <div class="card-title">本日の出勤者</div>
+        ${renderTodayPunches(staffShown, today)}
+      </div>
+
+      <div class="card">
+        <div class="card-title">クイックアクセス</div>
+        <button class="btn ghost" data-action="nav" data-view="ownerStaff">スタッフ管理</button>
+        <button class="btn ghost" data-action="nav" data-view="ownerStores">店舗管理</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderTodayPunches(staffShown, today) {
+  const active = db.punches.filter(p => !p.clockOut && p.clockIn.slice(0,10) === today && staffShown.some(s => s.id === p.staffId));
+  const finished = db.punches.filter(p => p.clockOut && p.clockIn.slice(0,10) === today && staffShown.some(s => s.id === p.staffId));
+  const all = [...active, ...finished];
+  if (all.length === 0) return '<div class="empty"><span class="ico">😴</span>まだ誰も出勤していません</div>';
+  return all.map(p => {
+    const s = staffById(p.staffId);
+    const st = storeById(p.storeId);
+    const ci = new Date(p.clockIn);
+    const co = p.clockOut ? new Date(p.clockOut) : null;
+    return `
+      <div class="row">
+        <div><div class="name">${s.name} <span style="font-size:10px;color:var(--muted);font-weight:400">· ${st.name.replace('Honey Taste ','')}</span></div>
+          <div class="meta">${fmtTime(ci)} 〜 ${co ? fmtTime(co) + ` (${((co-ci)/3600000).toFixed(1)}h)` : '出勤中'}</div></div>
+        <span class="badge ${co ? 'honey' : 'ok'}">${co ? '退勤' : '勤務中'}</span>
+      </div>`;
+  }).join('');
+}
+
+function viewOwnerStaff(user) {
+  const isManager = user.role === 'manager';
+  const storeFilter = isManager ? user.storeId : (session.params.storeId || 'all');
+  const list = db.staff.filter(s => s.role !== 'owner' && (storeFilter === 'all' || s.storeId === storeFilter));
+  return `
+    <div class="page">
+      <h2>スタッフ</h2>
+      <div class="sub">${list.length}名 登録中</div>
+
+      ${!isManager ? `<div class="store-switch">
+        <button class="store-pill ${storeFilter==='all'?'active':''}" data-action="setStore" data-store="all">全店</button>
+        ${db.stores.map(s => `<button class="store-pill ${storeFilter===s.id?'active':''}" data-action="setStore" data-store="${s.id}">${s.name.replace('Honey Taste ','')}</button>`).join('')}
+      </div>` : ''}
+
+      <button class="btn" data-action="nav" data-view="ownerStaffEdit" data-staffid="new">＋ スタッフを追加</button>
+
+      <div class="card" style="margin-top:14px">
+        ${list.map(s => {
+          const st = storeById(s.storeId);
+          const m = calcStaffMonth(s.id, thisMonth());
+          return `
+            <div class="row clickable" data-action="nav" data-view="ownerStaffEdit" data-staffid="${s.id}">
+              <div>
+                <div class="name">${s.name} ${s.role === 'manager' ? '<span class="badge gray">店長</span>' : ''}</div>
+                <div class="meta">${st ? st.name : '—'} ・ 時給 ¥${s.hourlyWage.toLocaleString()} ・ コード ${s.code}</div>
+              </div>
+              <div class="right">
+                <div class="meta">今月 ${m.totalH.toFixed(0)}h</div>
+                <div style="font-size:13px;font-weight:700">${yen(m.net)}</div>
+              </div>
+            </div>`;
+        }).join('') || '<div class="empty">スタッフがいません</div>'}
+      </div>
+    </div>
+  `;
+}
+
+function viewOwnerStaffEdit(user) {
+  const id = session.params.staffid;
+  const isNew = id === 'new';
+  const s = isNew
+    ? { id: 'u'+Date.now(), name: '', storeId: db.stores[0].id, role: 'staff', hourlyWage: 2000, nightWage: 2500, code: '', felicaId: '' }
+    : staffById(id);
+  if (!s) return '<div class="page"><div class="empty">見つかりません</div></div>';
+
+  return `
+    <div class="page">
+      <h2>${isNew ? 'スタッフ追加' : s.name + ' の編集'}</h2>
+      <form id="staff-form" onsubmit="return false">
+        <label>名前</label><input name="name" value="${s.name}" required>
+        <label>店舗</label><select name="storeId">${db.stores.map(st => `<option value="${st.id}" ${st.id===s.storeId?'selected':''}>${st.name}</option>`).join('')}</select>
+        <label>役職</label><select name="role">
+          <option value="staff" ${s.role==='staff'?'selected':''}>スタッフ</option>
+          <option value="manager" ${s.role==='manager'?'selected':''}>店長</option>
+        </select>
+        <label>時給 (円)</label><input name="hourlyWage" type="number" value="${s.hourlyWage}" required>
+        <label>深夜時給 (22:00-05:00, 円)</label><input name="nightWage" type="number" value="${s.nightWage}" required>
+        <label>打刻コード (4桁)</label><input name="code" value="${s.code}" maxlength="4" required>
+        <label>FeliCa ID (任意)</label><input name="felicaId" value="${s.felicaId || ''}" placeholder="IC-XXXX">
+        <button type="button" class="btn" data-action="saveStaff" data-staffid="${s.id}" data-isnew="${isNew}">保存</button>
+        ${!isNew ? `<button type="button" class="btn danger" data-action="deleteStaff" data-staffid="${s.id}">スタッフを削除</button>` : ''}
+        <button type="button" class="btn ghost" data-action="back">キャンセル</button>
+      </form>
+    </div>
+  `;
+}
+
+function viewShifts(user) {
+  const isManager = user.role === 'manager';
+  const storeFilter = isManager ? user.storeId : (session.params.storeId || db.stores[0].id);
+  const store = storeById(storeFilter);
+  const offset = session.params.weekOffset || 0;
+
+  const today = new Date();
+  const sun = new Date(today); sun.setDate(sun.getDate() - today.getDay() + offset * 7);
+  const days = [...Array(7)].map((_, i) => { const d = new Date(sun); d.setDate(sun.getDate() + i); return d; });
+  const staffList = db.staff.filter(s => s.storeId === storeFilter && s.role !== 'owner');
+
+  return `
+    <div class="page">
+      <h2>シフト</h2>
+      <div class="sub">${store ? store.name : ''}</div>
+
+      ${!isManager ? `<div class="store-switch">
+        ${db.stores.map(s => `<button class="store-pill ${storeFilter===s.id?'active':''}" data-action="setStore" data-store="${s.id}">${s.name.replace('Honey Taste ','')}</button>`).join('')}
+      </div>` : ''}
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <button class="btn ghost" style="width:auto;padding:6px 14px;margin:0" data-action="weekShift" data-d="-1">‹ 前週</button>
+        <div style="font-weight:700">${fmtDate(days[0])} - ${fmtDate(days[6])}</div>
+        <button class="btn ghost" style="width:auto;padding:6px 14px;margin:0" data-action="weekShift" data-d="1">次週 ›</button>
+      </div>
+
+      <div class="card" style="padding:10px">
+        <div class="shift-week-wrap">
+          <div class="shift-week">
+            <div></div>
+            ${days.map(d => `<div class="h ${d.getDay()===0?'sun':d.getDay()===6?'sat':''}">${dowNames[d.getDay()]}<br><span style="font-weight:400;font-size:9px">${d.getDate()}</span></div>`).join('')}
+            ${staffList.map(s => `
+              <div class="name-cell">${s.name}</div>
+              ${days.map(d => {
+                const ds = d.toISOString().slice(0,10);
+                const sh = db.shifts.find(x => x.staffId === s.id && x.date === ds);
+                const cls = sh ? (sh.status === 'requested' ? 'req' : 'on') : '';
+                const label = sh ? `${sh.startHour}-${sh.endHour > 24 ? sh.endHour - 24 : sh.endHour}` : '';
+                return `<button class="cell ${cls}" data-action="editShift" data-staffid="${s.id}" data-date="${ds}">${label}</button>`;
+              }).join('')}
+            `).join('')}
           </div>
         </div>
       </div>
+
+      <button class="btn" data-action="confirmShifts" data-store="${storeFilter}">この週を確定 ${store && store.features.lineNotify ? '・ LINE通知' : ''}</button>
+      <button class="btn ghost" data-action="copyPrevWeek" data-store="${storeFilter}">前週をコピー</button>
+      <div class="hint">タップでセル編集。色付き = 確定、点線 = スタッフからの希望</div>
     </div>
-    <div class="phone-label"><strong>1-B</strong> 打刻完了（3秒で自動遷移）</div>
-  </div>
+  `;
+}
 
-</div>
+function viewAttendance(user) {
+  const isManager = user.role === 'manager';
+  const storeFilter = isManager ? user.storeId : (session.params.storeId || 'all');
+  const today = todayISO();
+  const tab = session.params.tab || 'today';
 
-<!-- ====================== オーナーダッシュボード ====================== -->
-<div class="section-label">02 · オーナー画面（多店舗一括）</div>
-<div class="grid">
+  return `
+    <div class="page">
+      <h2>勤怠帳簿</h2>
+      ${!isManager ? `<div class="store-switch">
+        <button class="store-pill ${storeFilter==='all'?'active':''}" data-action="setStore" data-store="all">全店</button>
+        ${db.stores.map(s => `<button class="store-pill ${storeFilter===s.id?'active':''}" data-action="setStore" data-store="${s.id}">${s.name.replace('Honey Taste ','')}</button>`).join('')}
+      </div>` : ''}
 
-  <div>
-    <div class="phone">
-      <div class="screen">
-        <div class="status-bar"></div>
-        <div class="app-bar">
-          <div class="title">ダッシュボード</div>
-          <div class="right">2026年5月</div>
-        </div>
-        <div class="body">
-          <div class="store-switch">
-            <div class="store-pill active">全店</div>
-            <div class="store-pill">Honey Taste 本店</div>
-            <div class="store-pill">Bar Mitsu</div>
-            <div class="store-pill">Esthe Lumi</div>
-          </div>
+      <div class="segmented">
+        <button class="${tab==='today'?'active':''}" data-action="setTab" data-tab="today">本日</button>
+        <button class="${tab==='week'?'active':''}" data-action="setTab" data-tab="week">7日間</button>
+        <button class="${tab==='month'?'active':''}" data-action="setTab" data-tab="month">今月</button>
+      </div>
 
-          <div class="summary-box">
-            <div class="lbl">今月の人件費 見込み</div>
-            <div class="big">¥ 2,847,200</div>
-            <div class="sub">前月比 +¥124,000 ・ 在籍 23名</div>
-          </div>
+      ${tab === 'today' ? renderAttendanceToday(storeFilter, today) : ''}
+      ${tab === 'week' ? renderAttendanceRange(storeFilter, 7) : ''}
+      ${tab === 'month' ? renderAttendanceMonth(storeFilter) : ''}
+    </div>
+  `;
+}
+function renderAttendanceToday(storeFilter, today) {
+  const staffList = db.staff.filter(s => s.role !== 'owner' && (storeFilter === 'all' || s.storeId === storeFilter));
+  const punchesToday = db.punches.filter(p => p.clockIn.slice(0,10) === today && staffList.some(s => s.id === p.staffId));
+  const shiftsToday = db.shifts.filter(sh => sh.date === today && staffList.some(s => s.id === sh.staffId));
 
-          <div class="tile-grid">
-            <div class="tile">
-              <div class="label">本日出勤中</div>
-              <div class="num">14<span class="yen"> 名</span></div>
-            </div>
-            <div class="tile">
-              <div class="label">承認待ち</div>
-              <div class="num">3<span class="yen"> 件</span></div>
-            </div>
-            <div class="tile dark">
-              <div class="label">前借り残高</div>
-              <div class="num">¥ 184,000</div>
-            </div>
-            <div class="tile">
-              <div class="label">月末締めまで</div>
-              <div class="num">12<span class="yen"> 日</span></div>
-            </div>
-          </div>
+  if (shiftsToday.length === 0 && punchesToday.length === 0) {
+    return '<div class="card"><div class="empty"><span class="ico">😴</span>本日のシフト・打刻なし</div></div>';
+  }
 
+  return `
+    <div class="card">
+      <div class="card-title">本日 ${today}</div>
+      ${shiftsToday.map(sh => {
+        const s = staffById(sh.staffId);
+        const punch = punchesToday.find(p => p.staffId === sh.staffId);
+        const st = storeById(s.storeId);
+        if (punch) {
+          const ci = new Date(punch.clockIn);
+          const co = punch.clockOut ? new Date(punch.clockOut) : null;
+          return `<div class="row">
+            <div><div class="name">${s.name} <span style="font-size:10px;color:var(--muted);font-weight:400">· ${st.name.replace('Honey Taste ','')}</span></div>
+              <div class="meta">${fmtTime(ci)}${co ? ` 〜 ${fmtTime(co)} (${((co-ci)/3600000).toFixed(1)}h)` : ' 〜 出勤中'}</div></div>
+            <span class="badge ${co?'honey':'ok'}">${co?'退勤':'勤務中'}</span>
+          </div>`;
+        } else {
+          return `<div class="row">
+            <div><div class="name">${s.name} <span style="font-size:10px;color:var(--muted);font-weight:400">· ${st.name.replace('Honey Taste ','')}</span></div>
+              <div class="meta">予定 ${sh.startHour}:00 〜</div></div>
+            <span class="badge warn">未出勤</span>
+          </div>`;
+        }
+      }).join('')}
+    </div>
+  `;
+}
+function renderAttendanceRange(storeFilter, days) {
+  const staffList = db.staff.filter(s => s.role !== 'owner' && (storeFilter === 'all' || s.storeId === storeFilter));
+  const since = new Date(); since.setDate(since.getDate() - days + 1);
+  const sinceStr = since.toISOString().slice(0,10);
+  const rows = staffList.map(s => {
+    const punches = db.punches.filter(p => p.staffId === s.id && p.clockIn.slice(0,10) >= sinceStr && p.clockOut);
+    const hours = punches.reduce((sum, p) => sum + (new Date(p.clockOut) - new Date(p.clockIn))/3600000, 0);
+    return { s, hours, days: punches.length };
+  }).sort((a,b) => b.hours - a.hours);
+
+  return `<div class="card">
+    <div class="card-title">直近 ${days} 日間</div>
+    ${rows.map(r => `<div class="row">
+      <div><div class="name">${r.s.name}</div><div class="meta">${storeById(r.s.storeId).name.replace('Honey Taste ','')}</div></div>
+      <div class="right"><div class="amt">${r.hours.toFixed(1)} h</div><div class="meta">${r.days}日</div></div>
+    </div>`).join('')}
+  </div>`;
+}
+function renderAttendanceMonth(storeFilter) {
+  const staffList = db.staff.filter(s => s.role !== 'owner' && (storeFilter === 'all' || s.storeId === storeFilter));
+  const ym = thisMonth();
+  const rows = staffList.map(s => calcStaffMonth(s.id, ym)).sort((a,b) => b.totalH - a.totalH);
+  return `<div class="card">
+    <div class="card-title">${ym} 月次累計</div>
+    ${rows.map(r => {
+      const s = staffById(r.staffId);
+      return `<div class="row clickable" data-action="nav" data-view="ownerPayslip" data-staffid="${s.id}">
+        <div><div class="name">${s.name}</div><div class="meta">${storeById(s.storeId).name.replace('Honey Taste ','')} ・ 深夜 ${r.nightH.toFixed(0)}h</div></div>
+        <div class="right"><div class="amt">${r.totalH.toFixed(1)} h</div><div class="meta">${r.days}日</div></div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function viewPayroll(user) {
+  const isManager = user.role === 'manager';
+  const storeFilter = isManager ? user.storeId : (session.params.storeId || 'all');
+  const ym = session.params.ym || thisMonth();
+  const staffList = db.staff.filter(s => s.role !== 'owner' && (storeFilter === 'all' || s.storeId === storeFilter));
+  const rows = staffList.map(s => calcStaffMonth(s.id, ym));
+  const total = rows.reduce((sum, r) => sum + r.net, 0);
+  const baseTotal = rows.reduce((sum, r) => sum + r.base, 0);
+  const advTotal = rows.reduce((sum, r) => sum + r.advUsed, 0);
+
+  return `
+    <div class="page">
+      <h2>月末締め</h2>
+      <div class="sub">${ym}</div>
+
+      ${!isManager ? `<div class="store-switch">
+        <button class="store-pill ${storeFilter==='all'?'active':''}" data-action="setStore" data-store="all">全店</button>
+        ${db.stores.map(s => `<button class="store-pill ${storeFilter===s.id?'active':''}" data-action="setStore" data-store="${s.id}">${s.name.replace('Honey Taste ','')}</button>`).join('')}
+      </div>` : ''}
+
+      <div class="summary-box">
+        <div class="lbl">支給合計</div>
+        <div class="big">${yen(total)}</div>
+        <div class="sub">${rows.length}名 ・ 基本 ${yen(baseTotal)} ・ 前借相殺 ${yen(advTotal)}</div>
+      </div>
+
+      ${db.stores.filter(st => storeFilter === 'all' || st.id === storeFilter).map(st => {
+        const stRows = rows.filter(r => staffById(r.staffId).storeId === st.id);
+        if (stRows.length === 0) return '';
+        return `
           <div class="card">
-            <div class="card-title">店舗別 人件費</div>
-            <div class="row-line">
-              <div><div class="name">Honey Taste 本店</div><div class="meta">在籍 12名 · 出勤中 8名</div></div>
-              <div style="text-align:right"><div style="font-weight:700">¥ 1,420,000</div><div class="meta">予算内</div></div>
+            <div class="card-title">${st.name} (${stRows.length}名)</div>
+            ${stRows.map(r => {
+              const s = staffById(r.staffId);
+              return `<div class="row clickable" data-action="nav" data-view="ownerPayslip" data-staffid="${s.id}" data-ym="${ym}">
+                <div><div class="name">${s.name}</div><div class="meta">${r.totalH.toFixed(1)}h ${r.advUsed?'・ 前借 '+yen(r.advUsed):''}</div></div>
+                <div class="right"><div class="amt">${yen(r.net)}</div><div class="meta">基本 ${yen(r.base).replace('¥ ','¥')}</div></div>
+              </div>`;
+            }).join('')}
+          </div>`;
+      }).join('')}
+
+      <button class="btn" data-action="exportCSV" data-ym="${ym}" data-store="${storeFilter}">振込用CSVをダウンロード</button>
+      <button class="btn dark" data-action="sendPayslipLine">明細をLINEで一括送信 (デモ)</button>
+      <button class="btn ghost" data-action="changeMonth">月を変更</button>
+    </div>
+  `;
+}
+
+function viewPayslip(user) {
+  const staffId = session.params.staffid || user.id;
+  const ym = session.params.ym || thisMonth();
+  const s = staffById(staffId);
+  const r = calcStaffMonth(staffId, ym);
+  const store = storeById(s.storeId);
+
+  return `
+    <div class="page">
+      <h2>${s.name} の給与明細</h2>
+      <div class="sub">${ym} ・ ${store.name}</div>
+
+      <div class="summary-box">
+        <div class="lbl">支給予定額</div>
+        <div class="big">${yen(r.net)}</div>
+        <div class="sub">基本 ${yen(r.gross)} − 前借 ${yen(r.advUsed)} ${r.tax ? '− 源泉 '+yen(r.tax) : ''}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">勤務実績</div>
+        <div class="row"><div class="name">出勤日数</div><div class="amt">${r.days} 日</div></div>
+        <div class="row"><div class="name">勤務時間</div><div class="amt">${r.totalH.toFixed(1)} h</div></div>
+        <div class="row"><div class="name">うち深夜(22-5時)</div><div class="amt">${r.nightH.toFixed(1)} h</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">支給内訳</div>
+        <div class="row"><div>基本給 (¥${s.hourlyWage.toLocaleString()} × ${r.dayH.toFixed(1)}h)</div><div>${yen(r.baseDay)}</div></div>
+        <div class="row"><div>深夜給 (¥${s.nightWage.toLocaleString()} × ${r.nightH.toFixed(1)}h)</div><div>${yen(r.baseNight)}</div></div>
+        ${r.features.backs ? (r.backLines.length ? r.backLines.map(b => `<div class="row"><div>${b.label}<div class="meta">${b.detail}</div></div><div>${yen(b.amount)}</div></div>`).join('') : `<div class="row"><div style="color:var(--muted);font-size:12px">バック (売上未入力)</div><div>—</div></div>`) : ''}
+        ${r.advUsed ? `<div class="row"><div style="color:var(--bad)">前借り相殺</div><div style="color:var(--bad)">− ${yen(r.advUsed)}</div></div>` : ''}
+        ${r.tax ? `<div class="row"><div style="color:var(--muted)">源泉徴収 (10.21%)</div><div>− ${yen(r.tax)}</div></div>` : ''}
+        <div class="row" style="font-size:15px;font-weight:700"><div>差引支給額</div><div style="color:var(--honey-deep)">${yen(r.net)}</div></div>
+      </div>
+
+      <button class="btn ghost" data-action="printPayslip">明細を印刷 / PDF保存</button>
+    </div>
+  `;
+}
+
+function viewAdvances(user) {
+  const tab = session.params.tab || 'pending';
+  const list = db.advances
+    .filter(a => tab === 'all' || a.status === tab)
+    .sort((a,b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+
+  return `
+    <div class="page">
+      <h2>前借り承認</h2>
+      <div class="segmented">
+        <button class="${tab==='pending'?'active':''}" data-action="setTab" data-tab="pending">承認待ち (${db.advances.filter(a=>a.status==='pending').length})</button>
+        <button class="${tab==='approved'?'active':''}" data-action="setTab" data-tab="approved">承認済</button>
+        <button class="${tab==='rejected'?'active':''}" data-action="setTab" data-tab="rejected">却下</button>
+      </div>
+
+      ${list.length === 0 ? '<div class="empty"><span class="ico">📭</span>該当する申請がありません</div>' :
+        list.map(a => {
+          const s = staffById(a.staffId);
+          const st = storeById(s.storeId);
+          const m = calcStaffMonth(s.id, thisMonth());
+          const reqDate = new Date(a.requestedAt);
+          return `
+            <div class="approval-item ${a.status === 'approved' ? 'approved' : a.status === 'rejected' ? 'rejected' : ''}">
+              <div class="top">
+                <div class="who">${s.name} <span style="color:var(--muted);font-size:11px;font-weight:400">· ${st.name.replace('Honey Taste ','')}</span></div>
+                <div class="amount">${yen(a.amount)}</div>
+              </div>
+              <div class="reason">理由: ${a.reason} / 申請 ${fmtDate(reqDate)} ${fmtTime(reqDate)}</div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+                今月見込 ${yen(m.net + (a.status==='pending'?a.amount:0))} ・ 既前借 ${yen(m.advUsed)}
+                ${a.status === 'approved' ? '<span class="badge ok">承認済</span>' : ''}
+                ${a.status === 'rejected' ? '<span class="badge bad">却下</span>' : ''}
+              </div>
+              ${a.status === 'pending' ? `<div class="actions">
+                <button class="reject" data-action="advanceAction" data-id="${a.id}" data-act="reject">却下</button>
+                <button class="approve" data-action="advanceAction" data-id="${a.id}" data-act="approve">承認</button>
+              </div>` : ''}
             </div>
-            <div class="row-line">
-              <div><div class="name">Bar Mitsu</div><div class="meta">在籍 6名 · 出勤中 4名</div></div>
-              <div style="text-align:right"><div style="font-weight:700">¥ 824,000</div><div class="meta">予算内</div></div>
-            </div>
-            <div class="row-line">
-              <div><div class="name">Esthe Lumi</div><div class="meta">在籍 5名 · 出勤中 2名</div></div>
-              <div style="text-align:right"><div style="font-weight:700">¥ 603,200</div><div class="meta">+8%</div></div>
-            </div>
-          </div>
-        </div>
-        <div class="tab-bar">
-          <div class="tab active"><div class="ico">📊</div>ホーム</div>
-          <div class="tab"><div class="ico">👥</div>スタッフ</div>
-          <div class="tab"><div class="ico">📅</div>シフト</div>
-          <div class="tab"><div class="ico">💴</div>給与</div>
-          <div class="tab"><div class="ico">⚙️</div>設定</div>
-        </div>
+          `;
+        }).join('')}
+    </div>
+  `;
+}
+
+function viewSales(user) {
+  const isManager = user.role === 'manager';
+  const storeFilter = isManager ? user.storeId : (session.params.storeId || db.stores.find(s=>s.features.sales)?.id || db.stores[0].id);
+  const store = storeById(storeFilter);
+  if (!store) return '<div class="page"><div class="empty">店舗未選択</div></div>';
+  if (!store.features.sales) {
+    return `<div class="page">
+      <h2>売上入力</h2>
+      ${!isManager ? `<div class="store-switch">
+        ${db.stores.map(s => `<button class="store-pill ${storeFilter===s.id?'active':''}" data-action="setStore" data-store="${s.id}">${s.name.replace('Honey Taste ','')}</button>`).join('')}
+      </div>` : ''}
+      <div class="empty"><span class="ico">🚫</span>
+        この店舗では売上入力が無効です<br><br>
+        <button class="btn ghost" data-action="nav" data-view="ownerSettings" data-storeid="${storeFilter}" style="width:auto;padding:8px 16px;display:inline-block">設定で有効化</button>
+      </div>
+    </div>`;
+  }
+
+  const date = session.params.date || todayISO();
+  const dateSales = db.sales.filter(s => s.storeId === storeFilter && s.date === date);
+  const staffList = db.staff.filter(s => s.storeId === storeFilter && s.role === 'staff');
+  const rules = db.backRules.filter(r => r.storeId === storeFilter);
+
+  return `
+    <div class="page">
+      <h2>売上入力</h2>
+      <div class="sub">${store.name} ・ ${date} (${dowNames[new Date(date).getDay()]})</div>
+
+      ${!isManager ? `<div class="store-switch">
+        ${db.stores.map(s => `<button class="store-pill ${storeFilter===s.id?'active':''}" data-action="setStore" data-store="${s.id}">${s.name.replace('Honey Taste ','')}</button>`).join('')}
+      </div>` : ''}
+
+      <div class="card">
+        <div class="card-title">日付選択</div>
+        <input type="date" id="sale-date" value="${date}">
+      </div>
+
+      <button class="btn" data-action="addSale" data-store="${storeFilter}" data-date="${date}">＋ 売上を追加</button>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card-title">${date} の売上 (${dateSales.length}件)</div>
+        ${dateSales.length === 0 ? '<div class="empty"><span class="ico">📝</span>まだ入力がありません</div>' :
+          dateSales.map(sl => {
+            const s = staffById(sl.staffId);
+            const r = rules.find(x => x.type === sl.type);
+            const label = r ? r.label : sl.type;
+            return `<div class="sale-row">
+              <div><div class="v">${s.name}</div><div class="t">${label}</div></div>
+              ${sl.count ? `<div>${sl.count} 件</div>` : ''}
+              ${sl.amount ? `<div>${yen(sl.amount)}</div>` : ''}
+              <button class="del" data-action="deleteSale" data-id="${sl.id}">✕</button>
+            </div>`;
+          }).join('')
+        }
+      </div>
+
+      <div class="card">
+        <div class="card-title">スタッフ別 当日合計 (バック試算)</div>
+        ${(function() {
+          const lines = staffList.map(s => {
+            const mine = dateSales.filter(x => x.staffId === s.id);
+            if (mine.length === 0) return null;
+            let backTotal = 0;
+            mine.forEach(sl => {
+              const r = rules.find(x => x.type === sl.type);
+              if (!r) return;
+              if (r.kind === 'flat') backTotal += (sl.count || 0) * r.value;
+              else backTotal += Math.round((sl.amount || 0) * r.value / 100);
+            });
+            return `<div class="row"><div class="name">${s.name}</div><div class="right"><div class="amt">${yen(backTotal)}</div><div class="meta">バック</div></div></div>`;
+          }).filter(Boolean);
+          return lines.length ? lines.join('') : '<div class="empty">入力なし</div>';
+        })()}
       </div>
     </div>
-    <div class="phone-label"><strong>2-A</strong> オーナーホーム（多店舗ビュー）</div>
-  </div>
+  `;
+}
 
-  <div>
-    <div class="phone">
-      <div class="screen">
-        <div class="status-bar"></div>
-        <div class="app-bar">
-          <div class="back">‹ 戻る</div>
-          <div class="title">前借り承認</div>
-          <div class="right">3件</div>
-        </div>
-        <div class="body">
-          <div class="approval-item">
-            <div class="top">
-              <div class="who">あおい <span style="color:var(--muted);font-size:11px;font-weight:400">· 本店</span></div>
-              <div class="amount">¥ 30,000</div>
-            </div>
-            <div class="reason">理由: 家賃支払いのため / 申請 5/18 23:10</div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
-              今月見込 ¥198,400 · 前借残 ¥0
-            </div>
-            <div class="actions">
-              <button class="reject">却下</button>
-              <button class="approve">承認</button>
-            </div>
+function viewStores(user) {
+  return `
+    <div class="page">
+      <h2>店舗管理</h2>
+      <div class="sub">${db.stores.length}店舗</div>
+      ${db.stores.map(s => `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+            <div><div style="font-weight:700;font-size:16px">${s.name}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${({snack:'スナック',bar:'バー',esthe:'エステ'})[s.type]} ・ 営業 ${s.open}-${s.close}</div></div>
+            <button class="btn" style="width:auto;padding:6px 14px;margin:0" data-action="nav" data-view="ownerSettings" data-storeid="${s.id}">設定</button>
           </div>
-
-          <div class="approval-item">
-            <div class="top">
-              <div class="who">れな <span style="color:var(--muted);font-size:11px;font-weight:400">· 本店</span></div>
-              <div class="amount">¥ 50,000</div>
-            </div>
-            <div class="reason">理由: 帰省費用 / 申請 5/19 14:22</div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
-              今月見込 ¥312,000 · 前借残 ¥20,000 <span class="badge warn">残高あり</span>
-            </div>
-            <div class="actions">
-              <button class="reject">却下</button>
-              <button class="approve">承認</button>
-            </div>
-          </div>
-
-          <div class="approval-item">
-            <div class="top">
-              <div class="who">ケンジ <span style="color:var(--muted);font-size:11px;font-weight:400">· Bar Mitsu</span></div>
-              <div class="amount">¥ 20,000</div>
-            </div>
-            <div class="reason">理由: 友人結婚式 / 申請 5/19 18:40</div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
-              今月見込 ¥184,000 · 前借残 ¥0
-            </div>
-            <div class="actions">
-              <button class="reject">却下</button>
-              <button class="approve">承認</button>
-            </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            ${Object.entries(s.features).filter(([_,v]) => v).map(([k]) => `<span class="badge honey">${featureLabel(k)}</span>`).join('')}
           </div>
         </div>
-        <div class="tab-bar">
-          <div class="tab"><div class="ico">📊</div>ホーム</div>
-          <div class="tab"><div class="ico">👥</div>スタッフ</div>
-          <div class="tab"><div class="ico">📅</div>シフト</div>
-          <div class="tab active"><div class="ico">💴</div>給与</div>
-          <div class="tab"><div class="ico">⚙️</div>設定</div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function featureLabel(k) {
+  return { sales:'売上入力', backs:'バック', sourceTax:'源泉徴収', dayPay:'日払い', lineNotify:'LINE通知', customers:'客管理', bottles:'ボトル', staffSelfShift:'シフト希望', advances:'前借り' }[k] || k;
+}
+
+function viewSettings(user) {
+  const storeId = session.params.storeid || session.params.storeId || db.stores[0].id;
+  const store = storeById(storeId);
+  if (!store) return '';
+
+  return `
+    <div class="page">
+      <h2>設定</h2>
+      <div class="sub">店舗ごとの機能 ON/OFF</div>
+
+      <div class="store-switch">
+        ${db.stores.map(s => `<button class="store-pill ${storeId===s.id?'active':''}" data-action="setSettingsStore" data-store="${s.id}">${s.name.replace('Honey Taste ','')}</button>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="card-title">${store.name}</div>
+        ${[
+          ['sales',          '売上入力',       '伝票売上をデジタル化（バック計算の前提）'],
+          ['backs',          'バック計算',     '同伴・指名・%バックを給与に自動加算'],
+          ['sourceTax',      '源泉徴収',       'ホステス報酬 10.21% を自動控除（月5万円超）'],
+          ['dayPay',         '日払い対応',     '出勤の都度、当日分を確定/手渡し記録'],
+          ['lineNotify',     'LINE通知',       'シフト確定・給与確定をLINEで通知'],
+          ['advances',       '前借り機能',     'スタッフが前借りを申請、オーナー承認'],
+          ['staffSelfShift', 'シフト希望提出', 'スタッフがアプリから希望日を出せる'],
+          ['customers',      '客管理',         '来店履歴・指名履歴・誕生日（拡張）'],
+          ['bottles',        'ボトルキープ',   'ボトル管理・期限通知（拡張）'],
+        ].map(([k, label, desc]) => `
+          <div class="checkbox-row">
+            <div class="col-l"><div class="label">${label}</div><div class="desc">${desc}</div></div>
+            <div class="switch ${store.features[k] ? 'on' : ''}" data-action="toggleFeature" data-store="${storeId}" data-feature="${k}"></div>
+          </div>
+        `).join('')}
+      </div>
+
+      ${store.features.backs ? `
+        <div class="card">
+          <div class="card-title">バック料率 <span class="link" data-action="nav" data-view="ownerBackRules" data-storeid="${storeId}">編集 ›</span></div>
+          ${db.backRules.filter(r => r.storeId === storeId).map(r => `
+            <div class="row"><div class="name">${r.label}</div><div class="amt">${r.kind === 'flat' ? '¥'+r.value.toLocaleString()+'/件' : r.value+'%'}</div></div>
+          `).join('') || '<div class="empty">未設定</div>'}
+        </div>` : ''}
+
+      <hr>
+      <button class="btn ghost" data-action="nav" data-view="ownerStores">店舗一覧</button>
+      <button class="btn danger" data-action="resetData">デモデータを初期化</button>
+    </div>
+  `;
+}
+
+function viewBackRules(user) {
+  const storeId = session.params.storeid || db.stores[0].id;
+  const store = storeById(storeId);
+  const rules = db.backRules.filter(r => r.storeId === storeId);
+
+  return `
+    <div class="page">
+      <h2>バック料率</h2>
+      <div class="sub">${store.name}</div>
+
+      <div class="card">
+        ${rules.length === 0 ? '<div class="empty">未設定</div>' : rules.map(r => `
+          <div class="row">
+            <div><div class="name">${r.label}</div><div class="meta">${r.type}</div></div>
+            <div class="right" style="display:flex;align-items:center;gap:8px">
+              <input type="number" value="${r.value}" data-action="updateRule" data-id="${r.storeId}-${r.type}" style="width:80px;padding:6px">
+              <span style="font-size:11px;color:var(--muted)">${r.kind === 'flat' ? '円/件' : '%'}</span>
+              <button data-action="deleteRule" data-id="${r.storeId}-${r.type}" style="background:none;border:none;color:var(--bad);font-size:18px;cursor:pointer">✕</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <button class="btn" data-action="addRule" data-store="${storeId}">＋ 料率を追加</button>
+    </div>
+  `;
+}
+
+function viewManagerHome(user) {
+  const store = storeById(user.storeId);
+  const staffList = db.staff.filter(s => s.storeId === user.storeId && s.role !== 'owner');
+  const today = todayISO();
+  const activeNow = db.punches.filter(p => !p.clockOut && staffList.some(s => s.id === p.staffId)).length;
+  const todayShifts = db.shifts.filter(sh => sh.date === today && staffList.some(s => s.id === sh.staffId)).length;
+  const monthPay = staffList.reduce((sum, s) => sum + calcStaffMonth(s.id, thisMonth()).net, 0);
+  const pendingAdv = db.advances.filter(a => a.status === 'pending' && staffList.some(s => s.id === a.staffId)).length;
+
+  return `
+    <div class="page">
+      <h2>${store.name}</h2>
+      <div class="sub">店長: ${user.name} ・ ${todayISO()} (${dowNames[new Date().getDay()]})</div>
+
+      <div class="tile-grid">
+        <div class="tile honey" data-action="nav" data-view="managerAttendance" style="cursor:pointer">
+          <div class="label">出勤中</div><div class="num">${activeNow}/${todayShifts}</div>
         </div>
+        <div class="tile dark"><div class="label">在籍</div><div class="num">${staffList.length}<span class="yen"> 名</span></div></div>
+        <div class="tile" data-action="nav" data-view="managerPayroll" style="cursor:pointer">
+          <div class="label">今月給与</div><div class="num" style="font-size:14px">${yen(monthPay)}</div>
+        </div>
+        <div class="tile"><div class="label">前借り待ち</div><div class="num">${pendingAdv}<span class="yen"> 件</span></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">クイックアクション</div>
+        <button class="btn" data-action="nav" data-view="managerShifts">シフトを編集</button>
+        ${store.features.sales ? `<button class="btn ghost" data-action="nav" data-view="managerSales">本日の売上を入力</button>` : ''}
+        <button class="btn dark" data-action="openKioskFromUser" data-store="${user.storeId}">この端末を打刻モードに</button>
+      </div>
+
+      ${renderAttendanceToday(user.storeId, today)}
+    </div>
+  `;
+}
+
+function viewStaffHome(user) {
+  const store = storeById(user.storeId);
+  const ym = thisMonth();
+  const m = calcStaffMonth(user.id, ym);
+  const today = todayISO();
+  const active = activePunch(user.id);
+  const todayShift = db.shifts.find(sh => sh.staffId === user.id && sh.date === today);
+  const balance = db.advances.filter(a => a.staffId === user.id && a.status === 'approved' && monthOf(a.approvedAt || a.requestedAt) === ym).reduce((s,a) => s+a.amount, 0);
+
+  return `
+    <div class="page">
+      <h2>こんにちは, ${user.name}さん</h2>
+      <div class="sub">${store.name} ・ ${ym}</div>
+
+      ${active ? `
+        <div class="card" style="background:linear-gradient(135deg,var(--ok),#2a8a5e);color:#fff;border:none">
+          <div style="font-size:11px;opacity:0.8">勤務中</div>
+          <div style="font-size:18px;font-weight:700;margin:4px 0">${fmtTime(new Date(active.clockIn))} 出勤</div>
+          <div style="font-size:12px;opacity:0.8">経過 ${((Date.now() - new Date(active.clockIn))/3600000).toFixed(1)} 時間</div>
+        </div>` : todayShift ? `
+        <div class="card" style="border-color:var(--honey);background:var(--honey-light)">
+          <div style="font-size:12px;color:var(--honey-deep)">本日のシフト</div>
+          <div style="font-size:18px;font-weight:700;margin:4px 0">${todayShift.startHour}:00 〜 ${(todayShift.endHour > 24 ? todayShift.endHour - 24 : todayShift.endHour)}:00</div>
+          <div style="font-size:11px;color:var(--muted)">店舗で打刻端末にタッチしてください</div>
+        </div>` : ''}
+
+      <div class="summary-box">
+        <div class="lbl">今月の見込み</div>
+        <div class="big">${yen(m.net)}</div>
+        <div class="sub">${m.days}日出勤 ・ ${m.totalH.toFixed(1)}h ・ 前借 ${yen(m.advUsed)}</div>
+      </div>
+
+      <div class="tile-grid">
+        <div class="tile"><div class="label">出勤日数</div><div class="num">${m.days}<span class="yen"> 日</span></div></div>
+        <div class="tile"><div class="label">勤務時間</div><div class="num">${m.totalH.toFixed(0)}<span class="yen"> h</span></div></div>
+        <div class="tile"><div class="label">深夜時間</div><div class="num">${m.nightH.toFixed(0)}<span class="yen"> h</span></div></div>
+        <div class="tile dark"><div class="label">前借残高</div><div class="num">${yen(balance)}</div></div>
+      </div>
+
+      ${store.features.advances ? `<button class="btn" data-action="nav" data-view="staffAdvance">前借りを申請する</button>` : ''}
+      <button class="btn ghost" data-action="nav" data-view="staffPayslip">給与明細を確認</button>
+    </div>
+  `;
+}
+
+function viewStaffShifts(user) {
+  const today = todayISO();
+  const upcoming = db.shifts.filter(sh => sh.staffId === user.id && sh.date >= today).sort((a,b) => a.date.localeCompare(b.date));
+  const past = db.shifts.filter(sh => sh.staffId === user.id && sh.date < today).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 10);
+
+  return `
+    <div class="page">
+      <h2>シフト</h2>
+      <div class="sub">${user.name} の出勤予定</div>
+
+      ${storeById(user.storeId).features.staffSelfShift ? `<button class="btn" data-action="requestShift">＋ 希望日を提出</button>` : ''}
+
+      <div class="card">
+        <div class="card-title">これからの予定</div>
+        ${upcoming.length === 0 ? '<div class="empty">予定なし</div>' : upcoming.map(sh => {
+          const d = new Date(sh.date);
+          return `<div class="row">
+            <div><div class="name">${sh.date.slice(5)} (${dowNames[d.getDay()]})</div><div class="meta">${sh.status === 'requested' ? '希望提出中' : '確定'}</div></div>
+            <div class="right"><div class="amt">${sh.startHour}:00-${sh.endHour > 24 ? sh.endHour-24 : sh.endHour}:00</div></div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="card">
+        <div class="card-title">過去の出勤</div>
+        ${past.length === 0 ? '<div class="empty">履歴なし</div>' : past.map(sh => {
+          const d = new Date(sh.date);
+          const p = db.punches.find(p => p.staffId === user.id && p.clockIn.slice(0,10) === sh.date);
+          const h = p && p.clockOut ? ((new Date(p.clockOut)-new Date(p.clockIn))/3600000).toFixed(1) : '—';
+          return `<div class="row">
+            <div><div class="name">${sh.date.slice(5)} (${dowNames[d.getDay()]})</div><div class="meta">予定 ${sh.startHour}-${sh.endHour > 24 ? sh.endHour-24 : sh.endHour}</div></div>
+            <div class="right"><div class="amt">${h} h</div></div>
+          </div>`;
+        }).join('')}
       </div>
     </div>
-    <div class="phone-label"><strong>2-B</strong> 前借り承認（オーナー専用）</div>
-  </div>
+  `;
+}
 
-  <div>
-    <div class="phone">
-      <div class="screen">
-        <div class="status-bar"></div>
-        <div class="app-bar">
-          <div class="title">月末締め · 5月</div>
-          <div class="right">CSV</div>
-        </div>
-        <div class="body">
-          <div class="summary-box">
-            <div class="lbl">支給合計</div>
-            <div class="big">¥ 2,847,200</div>
-            <div class="sub">23名 · 前借相殺 ¥184,000 控除済</div>
+function viewStaffAdvance(user) {
+  const mine = db.advances.filter(a => a.staffId === user.id).sort((a,b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+  const m = calcStaffMonth(user.id, thisMonth());
+
+  return `
+    <div class="page">
+      <h2>前借り</h2>
+
+      <div class="summary-box">
+        <div class="lbl">今月の見込み (差引前)</div>
+        <div class="big">${yen(m.gross - m.tax)}</div>
+        <div class="sub">前借り済 ${yen(m.advUsed)} ・ 残額 ${yen(m.net)}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">新規申請</div>
+        <label>金額 (円)</label><input id="adv-amount" type="number" placeholder="例: 30000">
+        <label>理由</label><textarea id="adv-reason" placeholder="例: 家賃支払いのため"></textarea>
+        <button class="btn" data-action="submitAdvance">オーナーに申請</button>
+        <div class="hint">承認されるとお知らせします（通常 当日〜翌営業日）</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">申請履歴</div>
+        ${mine.length === 0 ? '<div class="empty">履歴なし</div>' : mine.map(a => `
+          <div class="row">
+            <div><div class="name">${yen(a.amount)}</div><div class="meta">${a.reason} ・ ${fmtDate(new Date(a.requestedAt))}</div></div>
+            <span class="badge ${a.status==='approved'?'ok':a.status==='rejected'?'bad':'warn'}">${a.status==='approved'?'承認':a.status==='rejected'?'却下':'承認待ち'}</span>
           </div>
-
-          <div class="card">
-            <div class="card-title">本店 (12名)</div>
-            <div class="payroll-row">
-              <div>
-                <div class="name" style="font-weight:600;font-size:13px">あおい</div>
-                <div class="meta">82.5h · 前借 ¥30,000</div>
-              </div>
-              <div>
-                <div class="amt">¥ 168,400</div>
-                <div class="amt-sub">基本 198,400</div>
-              </div>
-            </div>
-            <div class="payroll-row">
-              <div>
-                <div class="name" style="font-weight:600;font-size:13px">れな</div>
-                <div class="meta">96.0h · 前借 ¥70,000</div>
-              </div>
-              <div>
-                <div class="amt">¥ 242,000</div>
-                <div class="amt-sub">基本 312,000</div>
-              </div>
-            </div>
-            <div class="payroll-row">
-              <div>
-                <div class="name" style="font-weight:600;font-size:13px">みお</div>
-                <div class="meta">64.0h</div>
-              </div>
-              <div>
-                <div class="amt">¥ 156,800</div>
-                <div class="amt-sub">基本 156,800</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">Bar Mitsu (6名)</div>
-            <div class="payroll-row">
-              <div>
-                <div class="name" style="font-weight:600;font-size:13px">ケンジ</div>
-                <div class="meta">72.0h · 前借 ¥20,000</div>
-              </div>
-              <div>
-                <div class="amt">¥ 164,000</div>
-                <div class="amt-sub">基本 184,000</div>
-              </div>
-            </div>
-          </div>
-
-          <button class="btn-primary">振込用CSVをダウンロード</button>
-          <button class="btn-ghost">明細をLINEで一括送信</button>
-        </div>
+        `).join('')}
       </div>
     </div>
-    <div class="phone-label"><strong>2-C</strong> 月末締め・振込データ出力</div>
-  </div>
+  `;
+}
 
-</div>
+function bindActions() {
+  document.querySelectorAll('[data-action]').forEach(el => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      handleAction(el.dataset.action, el.dataset, el, e);
+    };
+  });
+  const dateSel = document.getElementById('sale-date');
+  if (dateSel) dateSel.onchange = () => { session.params.date = dateSel.value; setSession(session); render(); };
+  const kioskSel = document.getElementById('kiosk-store-sel');
+  if (kioskSel) kioskSel.onchange = () => { session.params.storeId = kioskSel.value; setSession(session); render(); };
+  document.querySelectorAll('input[data-action="updateRule"]').forEach(el => {
+    el.onclick = (e) => e.stopPropagation();
+    el.onchange = () => {
+      const [storeId, type] = el.dataset.id.split('-');
+      const r = db.backRules.find(x => x.storeId === storeId && x.type === type);
+      if (r) { r.value = parseInt(el.value) || 0; save(); toast('保存しました'); }
+    };
+  });
+}
 
-<!-- ====================== 店長 ====================== -->
-<div class="section-label">03 · 店長画面（自店のみ）</div>
-<div class="grid">
+function handleAction(action, d, el, e) {
+  switch (action) {
+    case 'loginAs':
+      setSession({ userId: d.userid, view: null, params: {} });
+      closeModal();
+      render(); break;
 
-  <div>
-    <div class="phone">
-      <div class="screen">
-        <div class="status-bar"></div>
-        <div class="app-bar">
-          <div class="title">勤怠帳簿</div>
-          <div class="right">5月</div>
+    case 'pickManager': {
+      const mgrs = db.staff.filter(s => s.role === 'manager');
+      openModal(`
+        <h3>店長を選択</h3>
+        <div class="picker-list">${mgrs.map(m => `<div class="picker-item" data-action="loginAs" data-userid="${m.id}">
+          <div class="who"><div class="name">${m.name}</div><div class="meta">${storeById(m.storeId).name}</div></div><div>›</div>
+        </div>`).join('')}</div>
+      `);
+      break;
+    }
+    case 'pickStaff': {
+      const sts = db.staff.filter(s => s.role === 'staff');
+      openModal(`
+        <h3>スタッフを選択</h3>
+        <div class="picker-list">${sts.map(m => `<div class="picker-item" data-action="loginAs" data-userid="${m.id}">
+          <div class="who"><div class="name">${m.name}</div><div class="meta">${storeById(m.storeId).name}</div></div><div>›</div>
+        </div>`).join('')}</div>
+      `);
+      break;
+    }
+    case 'openKiosk':
+      setSession({ userId: null, view: 'kiosk', params: { storeId: db.stores[0].id, pin: '' } });
+      startKioskClock();
+      render(); break;
+    case 'openKioskFromUser':
+      setSession({ ...session, view: 'kiosk', params: { storeId: d.store, pin: '' } });
+      startKioskClock();
+      render(); break;
+
+    case 'logout':
+      stopKioskClock();
+      closeModal();
+      logout(); break;
+
+    case 'switchUser':
+      openModal(`
+        <h3>ユーザー切替（デモ用）</h3>
+        <div class="picker-list">
+          <div class="picker-item" data-action="logout"><div class="who"><div class="name">🚪 ログアウト</div></div></div>
+          ${db.staff.map(s => `<div class="picker-item" data-action="loginAs" data-userid="${s.id}">
+            <div class="who"><div class="name">${s.name}</div><div class="meta">${s.role} ・ ${s.storeId ? storeById(s.storeId).name : '全店'}</div></div><div>›</div>
+          </div>`).join('')}
         </div>
-        <div class="body">
-          <div class="store-switch">
-            <div class="store-pill active">本店</div>
-          </div>
+      `);
+      break;
 
-          <div class="card">
-            <div class="card-title">本日 5/19 (月)</div>
-            <div class="row-line">
-              <div><div class="name">あおい</div><div class="meta">21:34 出勤 〜 出勤中</div></div>
-              <span class="badge ok">勤務中</span>
-            </div>
-            <div class="row-line">
-              <div><div class="name">れな</div><div class="meta">20:02 〜 02:18 (6h16m)</div></div>
-              <span class="badge honey">退勤</span>
-            </div>
-            <div class="row-line">
-              <div><div class="name">みお</div><div class="meta">21:10 出勤 〜 出勤中</div></div>
-              <span class="badge ok">勤務中</span>
-            </div>
-            <div class="row-line">
-              <div><div class="name">さくら</div><div class="meta">予定 21:00 〜</div></div>
-              <span class="badge warn">未出勤</span>
-            </div>
-          </div>
+    case 'nav':
+      session.params = {};
+      ['staffid','ym','storeid','tab','date'].forEach(k => { if (d[k] !== undefined) session.params[k] = d[k]; });
+      if (d.store) session.params.storeId = d.store;
+      session.view = d.view;
+      setSession(session);
+      render();
+      break;
+    case 'back': {
+      const u = staffById(session.userId);
+      session.view = homeFor(u.role);
+      session.params = {};
+      setSession(session);
+      render();
+      break;
+    }
+    case 'setStore':
+      session.params.storeId = d.store; setSession(session); render(); break;
+    case 'setSettingsStore':
+      session.params.storeid = d.store; setSession(session); render(); break;
+    case 'setTab':
+      session.params.tab = d.tab; setSession(session); render(); break;
 
-          <div class="card">
-            <div class="card-title">今月の累計</div>
-            <div class="row-line">
-              <div><div class="name">あおい</div></div>
-              <div style="text-align:right;font-size:12px"><strong>82.5h</strong> / 12日</div>
-            </div>
-            <div class="row-line">
-              <div><div class="name">れな</div></div>
-              <div style="text-align:right;font-size:12px"><strong>96.0h</strong> / 14日</div>
-            </div>
-            <div class="row-line">
-              <div><div class="name">みお</div></div>
-              <div style="text-align:right;font-size:12px"><strong>64.0h</strong> / 10日</div>
-            </div>
-            <div class="row-line">
-              <div><div class="name">さくら</div></div>
-              <div style="text-align:right;font-size:12px"><strong>48.5h</strong> / 8日</div>
-            </div>
-          </div>
-        </div>
-        <div class="tab-bar">
-          <div class="tab"><div class="ico">🏠</div>ホーム</div>
-          <div class="tab active"><div class="ico">📋</div>勤怠</div>
-          <div class="tab"><div class="ico">📅</div>シフト</div>
-          <div class="tab"><div class="ico">👥</div>スタッフ</div>
-        </div>
-      </div>
-    </div>
-    <div class="phone-label"><strong>3-A</strong> 勤怠帳簿（今日 / 月次）</div>
-  </div>
+    case 'resetData':
+      if (confirm('全データを初期化します。よろしいですか？')) {
+        resetDB(); toast('初期化しました'); logout();
+      }
+      break;
 
-  <div>
-    <div class="phone">
-      <div class="screen">
-        <div class="status-bar"></div>
-        <div class="app-bar">
-          <div class="title">シフト</div>
-          <div class="right">5/18 - 5/24</div>
-        </div>
-        <div class="body">
-          <div class="store-switch">
-            <div class="store-pill active">本店</div>
-          </div>
+    case 'pin':
+      session.params.pin = (session.params.pin || '') + d.n;
+      if (session.params.pin.length > 4) session.params.pin = session.params.pin.slice(0,4);
+      setSession(session);
+      if (session.params.pin.length === 4) {
+        setTimeout(() => doPunch(session.params.pin), 200);
+      }
+      render();
+      break;
+    case 'pinClear':
+      session.params.pin = ''; setSession(session); render(); break;
+    case 'pinSubmit':
+      doPunch(session.params.pin); break;
+    case 'felicaTap': {
+      const storeId = session.params.storeId;
+      const candidates = db.staff.filter(s => s.storeId === storeId && s.role !== 'owner');
+      openModal(`
+        <h3>📱 FeliCa シミュレータ</h3>
+        <div class="hint">タッチされたカードを選択してください（デモ）</div>
+        <div class="picker-list">${candidates.map(s => `<div class="picker-item" data-action="felicaPick" data-staffid="${s.id}">
+          <div class="who"><div class="name">${s.name}</div><div class="meta">${s.felicaId}</div></div><div>›</div>
+        </div>`).join('')}</div>
+      `);
+      break;
+    }
+    case 'felicaPick':
+      closeModal();
+      doPunchByStaffId(d.staffid);
+      break;
 
-          <div class="card" style="padding:10px">
-            <div class="shift-week">
-              <div></div>
-              <div class="h">月</div><div class="h">火</div><div class="h">水</div>
-              <div class="h">木</div><div class="h">金</div><div class="h">土</div><div class="h">日</div>
+    case 'saveStaff': {
+      const form = document.getElementById('staff-form');
+      const data = Object.fromEntries(new FormData(form));
+      if (!data.name) { toast('名前を入力してください'); return; }
+      const isNew = d.isnew === 'true';
+      if (isNew) {
+        db.staff.push({
+          id: d.staffid, name: data.name, storeId: data.storeId, role: data.role,
+          hourlyWage: parseInt(data.hourlyWage), nightWage: parseInt(data.nightWage),
+          code: data.code, felicaId: data.felicaId
+        });
+      } else {
+        const s = staffById(d.staffid);
+        Object.assign(s, { name: data.name, storeId: data.storeId, role: data.role,
+          hourlyWage: parseInt(data.hourlyWage), nightWage: parseInt(data.nightWage),
+          code: data.code, felicaId: data.felicaId });
+      }
+      save(); toast('保存しました'); handleAction('back', {});
+      break;
+    }
+    case 'deleteStaff':
+      if (confirm('このスタッフを削除しますか？')) {
+        db.staff = db.staff.filter(s => s.id !== d.staffid);
+        save(); toast('削除しました'); handleAction('back', {});
+      }
+      break;
 
-              <div class="name-cell">あおい</div>
-              <div class="cell on">21-2</div><div class="cell on">21-2</div>
-              <div class="cell">休</div><div class="cell on">21-2</div>
-              <div class="cell on">21-3</div><div class="cell on">20-3</div><div class="cell">休</div>
+    case 'weekShift':
+      session.params.weekOffset = (session.params.weekOffset || 0) + parseInt(d.d);
+      setSession(session); render(); break;
+    case 'editShift': {
+      const existing = db.shifts.find(x => x.staffId === d.staffid && x.date === d.date);
+      const staff = staffById(d.staffid);
+      const store = storeById(staff.storeId);
+      openModal(`
+        <h3>${staff.name} ・ ${d.date}</h3>
+        <label>開始 (時)</label><input id="sh-start" type="number" value="${existing ? existing.startHour : (store.type==='esthe'?11:21)}" min="0" max="29">
+        <label>終了 (時)</label><input id="sh-end" type="number" value="${existing ? existing.endHour : (store.type==='esthe'?20:26)}" min="0" max="29">
+        <div class="hint">26 = 翌2:00, 27 = 翌3:00…</div>
+        <button class="btn" data-action="saveShift" data-staffid="${d.staffid}" data-date="${d.date}">保存</button>
+        ${existing ? `<button class="btn danger" data-action="deleteShift" data-id="${existing.id}">シフトを削除</button>` : ''}
+      `);
+      break;
+    }
+    case 'saveShift': {
+      const sh = parseInt(document.getElementById('sh-start').value);
+      const eh = parseInt(document.getElementById('sh-end').value);
+      const existing = db.shifts.find(x => x.staffId === d.staffid && x.date === d.date);
+      if (existing) { existing.startHour = sh; existing.endHour = eh; existing.status = 'confirmed'; }
+      else db.shifts.push({ id: 'sh'+Date.now(), staffId: d.staffid, date: d.date, startHour: sh, endHour: eh, status: 'confirmed' });
+      save(); closeModal(); toast('保存しました'); render(); break;
+    }
+    case 'deleteShift':
+      db.shifts = db.shifts.filter(s => s.id !== d.id);
+      save(); closeModal(); toast('削除しました'); render(); break;
+    case 'confirmShifts': {
+      const store = storeById(d.store);
+      db.shifts.forEach(s => { const st = staffById(s.staffId); if (st && st.storeId === d.store) s.status = 'confirmed'; });
+      save();
+      toast(store.features.lineNotify ? 'シフトを確定 ・ LINE通知しました' : 'シフトを確定しました');
+      render(); break;
+    }
+    case 'copyPrevWeek': {
+      const offset = session.params.weekOffset || 0;
+      const today2 = new Date();
+      const sun = new Date(today2); sun.setDate(sun.getDate() - today2.getDay() + offset * 7);
+      const prevSun = new Date(sun); prevSun.setDate(prevSun.getDate() - 7);
+      const staffList = db.staff.filter(s => s.storeId === d.store);
+      let copied = 0;
+      for (let i = 0; i < 7; i++) {
+        const prev = new Date(prevSun); prev.setDate(prev.getDate()+i);
+        const next = new Date(sun); next.setDate(next.getDate()+i);
+        const prevStr = prev.toISOString().slice(0,10);
+        const nextStr = next.toISOString().slice(0,10);
+        staffList.forEach(s => {
+          const p = db.shifts.find(x => x.staffId === s.id && x.date === prevStr);
+          const exists = db.shifts.find(x => x.staffId === s.id && x.date === nextStr);
+          if (p && !exists) {
+            db.shifts.push({ id:'sh'+Date.now()+Math.random(), staffId:s.id, date:nextStr, startHour:p.startHour, endHour:p.endHour, status:'planned' });
+            copied++;
+          }
+        });
+      }
+      save(); toast(`${copied}件コピーしました`); render(); break;
+    }
 
-              <div class="name-cell">れな</div>
-              <div class="cell on">20-2</div><div class="cell">休</div>
-              <div class="cell on">21-2</div><div class="cell on">21-2</div>
-              <div class="cell on">20-3</div><div class="cell on">20-3</div><div class="cell on">20-1</div>
+    case 'addSale': {
+      const store = storeById(d.store);
+      const rules = db.backRules.filter(r => r.storeId === d.store);
+      const staffList = db.staff.filter(s => s.storeId === d.store && s.role === 'staff');
+      if (rules.length === 0) { toast('先にバック料率を設定してください'); return; }
+      openModal(`
+        <h3>売上を追加</h3>
+        <label>スタッフ</label>
+        <select id="sl-staff">${staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
+        <label>種別</label>
+        <select id="sl-type">${rules.map(r => `<option value="${r.type}" data-kind="${r.kind}">${r.label}</option>`).join('')}</select>
+        <label id="sl-vlabel">件数 (件) / 金額 (円)</label>
+        <input id="sl-value" type="number" placeholder="数値を入力">
+        <div class="hint">flat = 件数、percent = 売上金額</div>
+        <button class="btn" data-action="saveSale" data-store="${d.store}" data-date="${d.date}">追加</button>
+      `);
+      break;
+    }
+    case 'saveSale': {
+      const staffId = document.getElementById('sl-staff').value;
+      const typeSel = document.getElementById('sl-type');
+      const type = typeSel.value;
+      const kind = typeSel.selectedOptions[0].dataset.kind;
+      const val = parseInt(document.getElementById('sl-value').value) || 0;
+      if (val <= 0) { toast('値を入力してください'); return; }
+      db.sales.push({ id: 'sl'+Date.now(), staffId, storeId: d.store, date: d.date, type, amount: kind==='percent'?val:0, count: kind==='flat'?val:0 });
+      save(); closeModal(); toast('追加しました'); render(); break;
+    }
+    case 'deleteSale':
+      db.sales = db.sales.filter(s => s.id !== d.id);
+      save(); toast('削除しました'); render(); break;
 
-              <div class="name-cell">みお</div>
-              <div class="cell on">21-1</div><div class="cell on">21-1</div>
-              <div class="cell on">21-1</div><div class="cell">休</div>
-              <div class="cell on">21-2</div><div class="cell">休</div><div class="cell">休</div>
+    case 'toggleFeature': {
+      const store = storeById(d.store);
+      store.features[d.feature] = !store.features[d.feature];
+      save();
+      el.classList.toggle('on');
+      toast(`${featureLabel(d.feature)}: ${store.features[d.feature] ? 'ON' : 'OFF'}`);
+      break;
+    }
+    case 'addRule': {
+      openModal(`
+        <h3>バック料率を追加</h3>
+        <label>種別キー (英数, 一意)</label><input id="br-type" placeholder="例: dohan / shimei / drink">
+        <label>表示名</label><input id="br-label" placeholder="例: 同伴">
+        <label>計算方式</label><select id="br-kind"><option value="flat">定額/件</option><option value="percent">売上の%</option></select>
+        <label>値 (円 または %)</label><input id="br-value" type="number" value="1000">
+        <button class="btn" data-action="saveRule" data-store="${d.store}">追加</button>
+      `);
+      break;
+    }
+    case 'saveRule': {
+      const type = document.getElementById('br-type').value.trim();
+      const label = document.getElementById('br-label').value.trim();
+      const kind = document.getElementById('br-kind').value;
+      const value = parseInt(document.getElementById('br-value').value) || 0;
+      if (!type || !label) { toast('種別と表示名を入力'); return; }
+      if (db.backRules.find(r => r.storeId === d.store && r.type === type)) { toast('この種別は既に登録済'); return; }
+      db.backRules.push({ storeId: d.store, type, label, kind, value });
+      save(); closeModal(); toast('追加しました'); render(); break;
+    }
+    case 'deleteRule': {
+      const [storeId, type] = d.id.split('-');
+      db.backRules = db.backRules.filter(r => !(r.storeId === storeId && r.type === type));
+      save(); toast('削除しました'); render(); break;
+    }
 
-              <div class="name-cell">さくら</div>
-              <div class="cell">休</div><div class="cell on">21-1</div>
-              <div class="cell on">21-1</div><div class="cell on">21-1</div>
-              <div class="cell on">21-2</div><div class="cell on">21-2</div><div class="cell">休</div>
+    case 'advanceAction': {
+      const a = db.advances.find(x => x.id === d.id);
+      if (d.act === 'approve') { a.status = 'approved'; a.approvedAt = new Date().toISOString(); toast('承認しました'); }
+      else { a.status = 'rejected'; toast('却下しました'); }
+      save(); render(); break;
+    }
+    case 'submitAdvance': {
+      const amt = parseInt(document.getElementById('adv-amount').value);
+      const reason = document.getElementById('adv-reason').value.trim();
+      if (!amt || !reason) { toast('金額と理由を入力してください'); return; }
+      db.advances.push({ id: 'a'+Date.now(), staffId: session.userId, amount: amt, reason, status: 'pending', requestedAt: new Date().toISOString() });
+      save(); toast('申請しました（オーナー承認待ち）'); render(); break;
+    }
 
-              <div class="name-cell">ゆい</div>
-              <div class="cell on">21-2</div><div class="cell on">21-2</div>
-              <div class="cell on">21-2</div><div class="cell on">21-2</div>
-              <div class="cell on">21-3</div><div class="cell on">21-3</div><div class="cell on">20-1</div>
-            </div>
-          </div>
+    case 'exportCSV': {
+      const ym = d.ym, sf = d.store;
+      const staffList = db.staff.filter(s => s.role !== 'owner' && (sf === 'all' || s.storeId === sf));
+      const rows = [['店舗','氏名','勤務時間','深夜時間','基本給','バック','源泉','前借相殺','差引支給額']];
+      staffList.forEach(s => {
+        const r = calcStaffMonth(s.id, ym);
+        rows.push([
+          storeById(s.storeId).name, s.name,
+          r.totalH.toFixed(2), r.nightH.toFixed(2),
+          Math.round(r.base), Math.round(r.backsTotal), r.tax, r.advUsed, Math.round(r.net)
+        ]);
+      });
+      const csv = '﻿' + rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `honeytaste_payroll_${ym}.csv`; a.click();
+      URL.revokeObjectURL(url);
+      toast('CSVをダウンロードしました');
+      break;
+    }
+    case 'sendPayslipLine':
+      toast('LINE一括送信しました (デモ)'); break;
+    case 'changeMonth':
+      openModal(`
+        <h3>月を選択</h3>
+        ${[0,-1,-2,-3].map(off => {
+          const dd = new Date(); dd.setMonth(dd.getMonth()+off);
+          const ym = dd.toISOString().slice(0,7);
+          return `<div class="picker-item" data-action="setMonth" data-ym="${ym}">
+            <div class="who"><div class="name">${ym}</div></div><div>›</div>
+          </div>`;
+        }).join('')}
+      `);
+      break;
+    case 'setMonth':
+      session.params.ym = d.ym; setSession(session); closeModal(); render(); break;
+    case 'printPayslip':
+      window.print(); break;
 
-          <div style="font-size:11px;color:var(--muted);margin:8px 0 12px">
-            ※ 数字は出勤〜退勤時刻（時）。タップで編集
-          </div>
+    case 'requestShift':
+      openModal(`
+        <h3>シフト希望を提出</h3>
+        <label>日付</label><input id="rs-date" type="date" value="${todayISO()}">
+        <label>開始 (時)</label><input id="rs-start" type="number" value="21" min="0" max="29">
+        <label>終了 (時)</label><input id="rs-end" type="number" value="26" min="0" max="29">
+        <button class="btn" data-action="saveShiftRequest">提出</button>
+      `);
+      break;
+    case 'saveShiftRequest':
+      db.shifts.push({
+        id: 'sh'+Date.now(),
+        staffId: session.userId,
+        date: document.getElementById('rs-date').value,
+        startHour: parseInt(document.getElementById('rs-start').value),
+        endHour: parseInt(document.getElementById('rs-end').value),
+        status: 'requested'
+      });
+      save(); closeModal(); toast('提出しました'); render(); break;
+  }
+}
 
-          <button class="btn-primary">シフトを確定 · LINE通知</button>
-          <button class="btn-ghost">前週をコピー</button>
-        </div>
-        <div class="tab-bar">
-          <div class="tab"><div class="ico">🏠</div>ホーム</div>
-          <div class="tab"><div class="ico">📋</div>勤怠</div>
-          <div class="tab active"><div class="ico">📅</div>シフト</div>
-          <div class="tab"><div class="ico">👥</div>スタッフ</div>
-        </div>
-      </div>
-    </div>
-    <div class="phone-label"><strong>3-B</strong> 週次シフト編集</div>
-  </div>
+function doPunch(code) {
+  if (!code || code.length < 4) { toast('4桁コードを入力'); return; }
+  const s = db.staff.find(x => x.code === code);
+  if (!s) {
+    toast('コードが一致しません');
+    session.params.pin = ''; setSession(session); render(); return;
+  }
+  doPunchByStaffId(s.id);
+}
 
-  <div>
-    <div class="phone">
-      <div class="screen">
-        <div class="status-bar"></div>
-        <div class="app-bar">
-          <div class="back">‹ あおい</div>
-          <div class="title">給与明細</div>
-          <div class="right">5月</div>
-        </div>
-        <div class="body">
-          <div class="summary-box">
-            <div class="lbl">支給予定額</div>
-            <div class="big">¥ 168,400</div>
-            <div class="sub">基本 ¥198,400 − 前借 ¥30,000</div>
-          </div>
+function doPunchByStaffId(staffId) {
+  const s = staffById(staffId);
+  const storeId = session.params.storeId;
+  const active = activePunch(staffId);
+  let punch, action;
+  if (active) {
+    active.clockOut = new Date().toISOString();
+    punch = active; action = 'out';
+  } else {
+    punch = { id: 'p'+Date.now(), staffId, storeId, clockIn: new Date().toISOString(), clockOut: null };
+    db.punches.push(punch);
+    action = 'in';
+  }
+  save();
+  session.view = 'kioskResult';
+  session.params = { punch, staffId, action, storeId };
+  setSession(session);
+  render();
+  setTimeout(() => {
+    if (session && session.view === 'kioskResult') {
+      session.view = 'kiosk';
+      session.params = { storeId, pin: '' };
+      setSession(session);
+      render();
+    }
+  }, 4000);
+}
 
-          <div class="card">
-            <div class="card-title">勤務実績</div>
-            <div class="row-line">
-              <div class="name">出勤日数</div>
-              <div style="font-weight:700">12 日</div>
-            </div>
-            <div class="row-line">
-              <div class="name">勤務時間</div>
-              <div style="font-weight:700">82.5 h</div>
-            </div>
-            <div class="row-line">
-              <div class="name">うち深夜(22-5時)</div>
-              <div style="font-weight:700">68.0 h</div>
-            </div>
-          </div>
+let kioskTimer = null;
+function startKioskClock() {
+  stopKioskClock();
+  kioskTimer = setInterval(() => {
+    const el = document.getElementById('kiosk-clock');
+    if (el) el.textContent = fmtTime(new Date());
+  }, 1000);
+}
+function stopKioskClock() { if (kioskTimer) { clearInterval(kioskTimer); kioskTimer = null; } }
 
-          <div class="card">
-            <div class="card-title">支給内訳</div>
-            <div class="row-line">
-              <div>基本給 (2,400 × 14.5h)</div>
-              <div>¥ 34,800</div>
-            </div>
-            <div class="row-line">
-              <div>深夜給 (3,000 × 68.0h)</div>
-              <div>¥ 204,000</div>
-            </div>
-            <div class="row-line">
-              <div style="color:var(--muted);font-size:11px">バック等 <span class="badge honey">v2で自動</span></div>
-              <div>¥ 0</div>
-            </div>
-            <div class="row-line">
-              <div style="color:var(--bad)">前借り相殺</div>
-              <div style="color:var(--bad)">− ¥ 30,000</div>
-            </div>
-            <div class="row-line">
-              <div style="color:var(--muted);font-size:11px">源泉(10.21%) <span class="badge honey">v2</span></div>
-              <div>¥ 0</div>
-            </div>
-            <div class="row-line" style="font-size:15px;font-weight:700">
-              <div>差引支給額</div>
-              <div style="color:var(--honey-deep)">¥ 168,400</div>
-            </div>
-          </div>
-
-          <button class="btn-ghost">明細をPDFで保存</button>
-        </div>
-      </div>
-    </div>
-    <div class="phone-label"><strong>3-C</strong> 個別給与明細（タップで内訳展開）</div>
-  </div>
-
-</div>
-
-<!-- ====================== 凡例 ====================== -->
-<div class="legend">
-  <h3>📌 このモックでカバーしている MVP 機能</h3>
-  <ul>
-    <li><strong>1-A / 1-B</strong> · FeliCa打刻（共用端末）→ 完了時に当月の出勤実績と給与見込みを即時フィードバック</li>
-    <li><strong>2-A</strong> · オーナーの多店舗ダッシュボード。店舗別人件費、出勤中人数、前借り残高を一覧</li>
-    <li><strong>2-B</strong> · 前借り申請の承認フロー（オーナーのみ）。スタッフ側申請画面は v2 で追加</li>
-    <li><strong>2-C</strong> · 月末締めで全店全スタッフの支給額を一覧 → 振込用CSV出力</li>
-    <li><strong>3-A</strong> · 店長の勤怠帳簿（今日の出勤状況＋月次累計）</li>
-    <li><strong>3-B</strong> · 週次シフト編集 → 確定でLINE通知</li>
-    <li><strong>3-C</strong> · 個別給与明細。バック・源泉は欄を用意して v2 で自動化</li>
-  </ul>
-
-  <h3 style="margin-top:24px">🔮 プレゼン後に詰める論点（合意済）</h3>
-  <ul>
-    <li>バック種類と料率（テンプレ＋自由項目）／業態別ルール</li>
-    <li>売上入力フロー — 現状は手書き伝票、デジタル化の運用設計が必要</li>
-    <li>前借り上限・頻度／店長代理申請の可否</li>
-    <li>シフト希望提出 → 確定フロー、ヘルプ要請・交換</li>
-    <li>スタッフ側スマホアプリ（給与/前借り残高の本人ビュー、LINE通知）</li>
-    <li>源泉徴収（10.21%/5万円控除）自動計算</li>
-    <li>振込API直結（GMOあおぞら / freee / 全銀CSV）</li>
-    <li>本人確認書類アップロード（風営法名簿）</li>
-    <li>客管理・ボトルキープ・売上ダッシュボード等の拡張機能（店舗ごとON/OFF）</li>
-  </ul>
-</div>
-
+if (session && session.view === 'kiosk') startKioskClock();
+render();
+</script>
 </body>
 </html>
