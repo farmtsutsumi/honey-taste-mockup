@@ -45,9 +45,13 @@
     font-size: 16px; cursor: pointer; padding: 4px;
   }
   .top .who {
-    color: var(--muted); font-size: 12px;
-    background: #fff; border: 1px solid var(--line);
-    padding: 4px 10px; border-radius: 12px; cursor: pointer;
+    color: var(--honey-deep); font-size: 13px; font-weight: 700;
+    background: var(--honey-light); border: 1px solid var(--honey);
+    padding: 6px 12px; border-radius: 14px; cursor: pointer;
+  }
+  .top .home-btn {
+    background: none; border: none; color: var(--honey-deep);
+    font-size: 20px; cursor: pointer; padding: 4px 8px;
   }
   .page { padding: 12px 20px 80px; }
   h1 { font-size: 24px; margin: 8px 0 4px; font-weight: 700; }
@@ -150,32 +154,33 @@
   /* login */
   .login {
     min-height: 100vh;
-    background: linear-gradient(180deg, #2a1f15 0%, #0f0a06 100%);
-    color: #fff;
+    background: linear-gradient(180deg, #fff4d1 0%, #f5b800 60%, #d99700 100%);
+    color: var(--ink);
     padding: 80px 24px 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
-  .login h1 { color: var(--honey); font-size: 32px; margin: 0 0 4px; }
-  .login .tag { color: #b8a890; font-size: 11px; letter-spacing: 0.3em; margin-bottom: 50px; }
+  .login h1 { color: var(--ink); font-size: 36px; margin: 0 0 4px; }
+  .login .tag { color: var(--ink-soft, #3a2f25); opacity: 0.6; font-size: 11px; letter-spacing: 0.3em; margin-bottom: 50px; }
   .login .card-pick {
     width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(245,184,0,0.3);
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(26,20,16,0.1);
     border-radius: 16px;
     padding: 22px;
     margin-bottom: 14px;
     cursor: pointer;
-    color: #fff;
+    color: var(--ink);
     display: flex;
     align-items: center;
     gap: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
   }
-  .login .card-pick:active { background: rgba(245,184,0,0.12); }
+  .login .card-pick:active { background: #fff; }
   .login .card-pick .ico { font-size: 36px; }
-  .login .card-pick .ttl { color: var(--honey); font-weight: 700; font-size: 17px; }
-  .login .card-pick .desc { color: #b8a890; font-size: 12px; margin-top: 3px; }
+  .login .card-pick .ttl { color: var(--ink); font-weight: 700; font-size: 17px; }
+  .login .card-pick .desc { color: var(--muted); font-size: 12px; margin-top: 3px; }
 
   /* kiosk */
   .kiosk {
@@ -487,7 +492,9 @@ function render() {
   const isHome = !v || v === 'home';
   app.innerHTML = `
     <div class="top">
-      ${!isHome ? '<button class="back" data-act="back">‹ 戻る</button>' : '<div style="width:40px"></div>'}
+      <div style="display:flex;align-items:center;gap:6px">
+        ${!isHome ? '<button class="back" data-act="back">‹ 戻る</button>' : '<button class="home-btn" data-act="toLogin" title="ログイン画面へ">🏠</button>'}
+      </div>
       <button class="who" data-act="switch">${me ? me.name : 'ゲスト'} ▾</button>
     </div>
     ${body}
@@ -837,13 +844,15 @@ function handle(act, d) {
       stopClock(); closeModal(); logout(); break;
     case 'switch':
       modal(`<h3>切り替え（デモ）</h3>
+        <div class="picker" data-act="toLogin" style="background:var(--honey-light);border-color:var(--honey)"><div class="who-info"><div class="nm">🏠 ログイン画面に戻る</div><div class="mt">最初の3つの選択肢に戻る</div></div><div>›</div></div>
         <div class="picker" data-act="loginOwner"><div class="who-info"><div class="nm">👑 オーナー</div></div><div>›</div></div>
-        ${db.staff.map(s => `<div class="picker" data-act="login" data-uid="${s.id}">
+        ${db.staff.filter(s=>s.id!=='owner').map(s => `<div class="picker" data-act="login" data-uid="${s.id}">
           <div class="who-info"><div class="nm">${s.name}</div><div class="mt">${storeById(s.storeId).name}</div></div><div>›</div>
         </div>`).join('')}
-        <div class="picker" data-act="logout"><div class="who-info"><div class="nm">🚪 ログアウト</div></div><div>›</div></div>
       `);
       break;
+    case 'toLogin':
+      closeModal(); stopClock(); logout(); break;
     case 'back':
       session.view = 'home'; session.params = {}; setSession(session); render(); break;
     case 'go':
