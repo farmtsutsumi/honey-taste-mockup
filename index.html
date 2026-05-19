@@ -342,7 +342,7 @@
   .pay-row .info .mt { font-size: 11px; color: var(--muted); margin-top: 2px; }
   .pay-row .amt-col { text-align: right; }
   .pay-row .amt-col .am { font-weight: 800; font-size: 16px; }
-  .pay-row .check {
+  .check {
     width: 32px; height: 32px;
     border-radius: 50%;
     border: 2px solid var(--line);
@@ -352,7 +352,7 @@
     font-size: 18px; color: transparent;
     flex-shrink: 0;
   }
-  .pay-row .check.paid {
+  .check.paid {
     background: var(--ok);
     border-color: var(--ok);
     color: #fff;
@@ -412,12 +412,36 @@
 /* ============ DATA ============ */
 const KEY = 'honeytaste_simple_v1';
 
+const ALLOWANCE_DEFS = {
+  salesBack: { label: '売り上げバック', kind: 'manual' },
+  dohan:     { label: '同伴手当',       kind: 'manual' },
+  shampagne: { label: 'シャンパン手当', kind: 'manual' },
+  shot:      { label: 'ショット手当',   kind: 'manual' },
+  event:     { label: 'イベント手当',   kind: 'manual' },
+  saturday:  { label: '土曜日手当',     kind: 'auto' },
+};
+
+function defaultAllowances(type) {
+  if (type === 'snack') return {
+    on:   { salesBack: true,  dohan: true,  shampagne: true,  shot: true,  event: true,  saturday: true  },
+    rate: { saturday: 2000 },
+  };
+  if (type === 'bar') return {
+    on:   { salesBack: false, dohan: false, shampagne: true,  shot: true,  event: true,  saturday: true  },
+    rate: { saturday: 1500 },
+  };
+  return {
+    on:   { salesBack: true,  dohan: false, shampagne: false, shot: false, event: true,  saturday: false },
+    rate: { saturday: 0 },
+  };
+}
+
 function seed() {
   const today = new Date();
   const stores = [
-    { id: 's1', name: 'Honey Taste' },
-    { id: 's2', name: 'Bar Mitsu' },
-    { id: 's3', name: 'Esthe Lumi' },
+    { id: 's1', name: 'Honey Taste', type: 'snack', ...defaultAllowances('snack') },
+    { id: 's2', name: 'Bar Mitsu',   type: 'bar',   ...defaultAllowances('bar') },
+    { id: 's3', name: 'Esthe Lumi',  type: 'esthe', ...defaultAllowances('esthe') },
   ];
   const staff = [
     { id: 'u1', name: 'あおい', storeId: 's1', wage: 2400 },
@@ -478,7 +502,16 @@ function seed() {
     });
   }
 
-  return { stores, staff, punches, advances, payouts, shifts };
+  /* 手当エントリ: { id, staffId, type, amount, date, note? } */
+  const allowanceEntries = [
+    { id:'al1', staffId:'u1', type:'shampagne', amount:5000, date: new Date(Date.now()-86400000*3).toISOString().slice(0,10) },
+    { id:'al2', staffId:'u1', type:'dohan',     amount:3000, date: new Date(Date.now()-86400000*5).toISOString().slice(0,10) },
+    { id:'al3', staffId:'u2', type:'shampagne', amount:5000, date: new Date(Date.now()-86400000*2).toISOString().slice(0,10) },
+    { id:'al4', staffId:'u2', type:'salesBack', amount:24500, date: new Date(Date.now()-86400000*1).toISOString().slice(0,10) },
+    { id:'al5', staffId:'u3', type:'shot',      amount:2000, date: new Date(Date.now()-86400000*4).toISOString().slice(0,10) },
+  ];
+
+  return { stores, staff, punches, advances, payouts, shifts, allowanceEntries };
 }
 
 let db = (() => {
@@ -486,6 +519,18 @@ let db = (() => {
   catch (e) { const s = seed(); localStorage.setItem(KEY, JSON.stringify(s)); return s; }
 })();
 if (!db.payouts) db.payouts = [];
+if (!db.allowanceEntries || db.allowanceEntries.length === 0) {
+  db.allowanceEntries = [
+    { id:'al1', staffId:'u1', type:'shampagne', amount:5000,  date: new Date(Date.now()-86400000*3).toISOString().slice(0,10) },
+    { id:'al2', staffId:'u1', type:'dohan',     amount:3000,  date: new Date(Date.now()-86400000*5).toISOString().slice(0,10) },
+    { id:'al3', staffId:'u2', type:'shampagne', amount:5000,  date: new Date(Date.now()-86400000*2).toISOString().slice(0,10) },
+    { id:'al4', staffId:'u2', type:'salesBack', amount:24500, date: new Date(Date.now()-86400000*1).toISOString().slice(0,10) },
+    { id:'al5', staffId:'u3', type:'shot',      amount:2000,  date: new Date(Date.now()-86400000*4).toISOString().slice(0,10) },
+  ];
+}
+db.stores.forEach(st => {
+  if (!st.on) Object.assign(st, defaultAllowances(st.type || 'snack'));
+});
 if (!db.shifts || db.shifts.length === 0) {
   const today = new Date();
   db.shifts = [];
@@ -528,14 +573,45 @@ const activePunch = sid => db.punches.find(p => p.staffId === sid && !p.clockOut
 
 function calcMonth(staffId, ymStr) {
   const s = staffById(staffId);
+  const store = storeById(s.storeId);
   const punches = db.punches.filter(p => p.staffId === staffId && p.clockIn.slice(0,7) === ymStr && p.clockOut);
   let hours = 0;
-  punches.forEach(p => { hours += (new Date(p.clockOut) - new Date(p.clockIn)) / 3600000; });
+  let saturdayCount = 0;
+  const saturdaySet = new Set();
+  punches.forEach(p => {
+    const ci = new Date(p.clockIn), co = new Date(p.clockOut);
+    hours += (co - ci) / 3600000;
+    if (ci.getDay() === 6) saturdaySet.add(ci.toISOString().slice(0,10));
+  });
+  saturdayCount = saturdaySet.size;
   const base = hours * s.wage;
+
+  /* 手当の集計 */
+  const allowances = []; // { key, label, amount }
+  if (store && store.on) {
+    Object.keys(ALLOWANCE_DEFS).forEach(key => {
+      if (!store.on[key]) return;
+      const def = ALLOWANCE_DEFS[key];
+      let amount = 0;
+      if (def.kind === 'auto' && key === 'saturday') {
+        amount = saturdayCount * (store.rate?.saturday || 0);
+      } else {
+        amount = db.allowanceEntries
+          .filter(e => e.staffId === staffId && e.type === key && e.date.slice(0,7) === ymStr)
+          .reduce((sum, e) => sum + e.amount, 0);
+      }
+      if (amount > 0) allowances.push({ key, label: def.label, amount, ...(key === 'saturday' ? { detail: `${saturdayCount}回 × ¥${(store.rate?.saturday || 0).toLocaleString()}` } : {}) });
+    });
+  }
+  const allowanceTotal = allowances.reduce((sum, a) => sum + a.amount, 0);
+
   const adv = db.advances
     .filter(a => a.staffId === staffId && a.status === 'approved' && a.at.slice(0,7) === ymStr)
     .reduce((sum, a) => sum + a.amount, 0);
-  return { hours, days: punches.length, base, adv, net: base - adv };
+
+  const gross = base + allowanceTotal;
+  const net = gross - adv;
+  return { hours, days: punches.length, base, allowances, allowanceTotal, gross, adv, net, saturdayCount };
 }
 
 function toast(msg) {
@@ -568,6 +644,8 @@ function render() {
   if (role === 'owner') {
     if (v === 'approvals') body = viewApprovals();
     else if (v === 'payroll') body = viewPayroll();
+    else if (v === 'payslip') body = viewPayslip();
+    else if (v === 'allowanceSettings') body = viewAllowanceSettings();
     else if (v === 'shifts') body = viewShifts();
     else body = viewOwnerHome();
   } else {
@@ -894,9 +972,9 @@ function viewPayroll() {
               const paid = isPaid(s.id, ym);
               return `
                 <div class="pay-row ${paid?'paid':''}">
-                  <div class="info">
-                    <div class="nm">${s.name}</div>
-                    <div class="mt">${m.hours.toFixed(1)}h${m.adv ? ' ・ 前借 '+yen(m.adv) : ''}${paid ? ' ・ '+fmtDateLong(new Date(getPaidAt(s.id, ym))) : ''}</div>
+                  <div class="info" data-act="go" data-v="payslip" data-uid="${s.id}" style="cursor:pointer">
+                    <div class="nm">${s.name} <span style="font-size:11px;color:var(--honey-deep);font-weight:600">明細 ›</span></div>
+                    <div class="mt">${m.hours.toFixed(1)}h${m.allowanceTotal ? ' ・ 手当 '+yen(m.allowanceTotal) : ''}${m.adv ? ' ・ 前借 '+yen(m.adv) : ''}${paid ? ' ・ '+fmtDateLong(new Date(getPaidAt(s.id, ym))) : ''}</div>
                   </div>
                   <div class="amt-col"><div class="am">${yen(m.net)}</div></div>
                   <button class="check ${paid?'paid':''}" data-act="togglePaid" data-uid="${s.id}" data-amt="${Math.round(m.net)}">${paid?'✓':''}</button>
@@ -909,7 +987,113 @@ function viewPayroll() {
 
       <button class="btn" data-act="print">支給リストを印刷 / PDF</button>
       <button class="btn ghost" data-act="line">明細をLINEで送る</button>
-      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">タップで「渡した ✓」を記録</div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">行をタップ＝明細 ・ 〇タップ＝「渡した」記録</div>
+
+      <hr>
+      <button class="btn ghost" data-act="go" data-v="allowanceSettings">手当の設定（店舗ごと）</button>
+    </div>
+  `;
+}
+
+/* ============ Payslip detail ============ */
+function viewPayslip() {
+  const ym = thisMonth();
+  const uid = session.params?.uid;
+  const s = staffById(uid);
+  if (!s) return '<div class="page"><div class="empty">スタッフが見つかりません</div></div>';
+  const store = storeById(s.storeId);
+  const m = calcMonth(uid, ym);
+  const paid = isPaid(uid, ym);
+
+  return `
+    <div class="page">
+      <h1>${s.name}さん の明細</h1>
+      <div class="lead">${store.name} ・ ${ym}</div>
+
+      <div class="hero">
+        <div class="lbl">支給額</div>
+        <div class="big">${yen(m.net)}</div>
+        <div class="sub">${paid ? '受け渡し済 ・ '+fmtDateLong(new Date(getPaidAt(uid, ym))) : 'まだ渡していません'}</div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div><div class="name">時間給</div><div class="meta">${m.hours.toFixed(1)}h × ¥${s.wage.toLocaleString()}</div></div>
+          <div class="amt">${yen(m.base)}</div>
+        </div>
+        ${m.allowances.map(a => `
+          <div class="row">
+            <div><div class="name">${a.label}</div>${a.detail ? `<div class="meta">${a.detail}</div>` : ''}</div>
+            <div class="amt">${yen(a.amount)}</div>
+          </div>
+        `).join('')}
+        <div class="row" style="background:var(--honey-light);margin:6px -16px -16px;padding:14px 16px;border-radius:0 0 16px 16px">
+          <div class="name">小計</div>
+          <div class="amt">${yen(m.gross)}</div>
+        </div>
+      </div>
+
+      ${m.adv > 0 ? `<div class="card">
+        <div class="row" style="color:var(--bad)">
+          <div><div class="name">前借り相殺</div></div>
+          <div class="amt">− ${yen(m.adv)}</div>
+        </div>
+        <div class="row" style="font-size:17px;font-weight:800">
+          <div>差引支給額</div>
+          <div style="color:var(--honey-deep)">${yen(m.net)}</div>
+        </div>
+      </div>` : ''}
+
+      <button class="btn" data-act="addAllowance" data-uid="${uid}">＋ 手当を追加</button>
+      <button class="btn ghost" data-act="print">この明細を印刷 / PDF</button>
+    </div>
+  `;
+}
+
+/* ============ Allowance settings ============ */
+function viewAllowanceSettings() {
+  const storeId = session.params?.storeId || db.stores[0].id;
+  const store = storeById(storeId);
+
+  return `
+    <div class="page">
+      <h1>手当の設定</h1>
+      <div class="lead">店舗ごとに使う手当を選べます</div>
+
+      <div class="store-pills">
+        ${db.stores.map(s => `<button class="pill ${storeId===s.id?'on':''}" data-act="setStore" data-s="${s.id}">${s.name}</button>`).join('')}
+      </div>
+
+      <div class="card">
+        ${Object.entries(ALLOWANCE_DEFS).map(([k, def]) => {
+          const on = store.on[k];
+          const isAuto = def.kind === 'auto';
+          return `
+            <div style="padding:14px 0;border-bottom:1px solid var(--line)">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div style="font-weight:700">${def.label}</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${isAuto ? '自動計算（土曜の出勤回数 × 単価）' : '都度入力'}</div>
+                </div>
+                <button class="check ${on?'paid':''}" data-act="toggleAllowance" data-store="${storeId}" data-key="${k}">${on?'✓':''}</button>
+              </div>
+              ${isAuto && on ? `
+                <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+                  <span style="font-size:12px;color:var(--muted)">単価</span>
+                  <input type="number" value="${store.rate?.saturday || 0}" data-act="setRate" data-store="${storeId}" data-key="${k}" style="width:120px;padding:8px">
+                  <span style="font-size:12px;color:var(--muted)">円/回</span>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);margin-top:14px;line-height:1.6">
+        💡 オフにすると明細から消えます<br>
+        💡 「都度入力」は売上やイベントが発生した日に記録する手当<br>
+        💡 「土曜日手当」は出勤データから自動で計算
+      </div>
     </div>
   `;
 }
@@ -1000,6 +1184,15 @@ function bind() {
   });
   const kss = document.getElementById('ks-store');
   if (kss) kss.onchange = () => { session.params.storeId = kss.value; setSession(session); render(); };
+  document.querySelectorAll('input[data-act="setRate"]').forEach(inp => {
+    inp.onclick = e => e.stopPropagation();
+    inp.onchange = () => {
+      const st = storeById(inp.dataset.store);
+      if (!st.rate) st.rate = {};
+      st.rate[inp.dataset.key] = parseInt(inp.value) || 0;
+      save(); toast('保存しました');
+    };
+  });
 }
 
 function handle(act, d) {
@@ -1036,7 +1229,9 @@ function handle(act, d) {
     case 'back':
       session.view = 'home'; session.params = {}; setSession(session); render(); break;
     case 'go':
-      session.view = d.v; setSession(session); render(); break;
+      session.view = d.v;
+      if (d.uid) { if(!session.params) session.params={}; session.params.uid = d.uid; }
+      setSession(session); render(); break;
     case 'setStore':
       if (!session.params) session.params = {};
       session.params.storeId = d.s; setSession(session); render(); break;
@@ -1174,6 +1369,41 @@ function handle(act, d) {
     }
     case 'confirmShifts':
       toast('LINEで全員に通知しました (デモ)'); break;
+
+    /* 手当 */
+    case 'addAllowance': {
+      const s = staffById(d.uid);
+      const store = storeById(s.storeId);
+      const available = Object.entries(ALLOWANCE_DEFS).filter(([k, def]) => store.on[k] && def.kind === 'manual');
+      if (available.length === 0) { toast('この店舗で使える手当がありません'); return; }
+      modal(`<h3>${s.name}さんに手当を追加</h3>
+        <label>種類</label>
+        <select id="al-type">${available.map(([k, def]) => `<option value="${k}">${def.label}</option>`).join('')}</select>
+        <label>金額</label>
+        <input id="al-amt" type="number" placeholder="例: 5000" inputmode="numeric">
+        <label>日付</label>
+        <input id="al-date" type="date" value="${todayISO()}">
+        <button class="btn" data-act="saveAllowance" data-uid="${d.uid}">追加</button>
+      `);
+      break;
+    }
+    case 'saveAllowance': {
+      const type = document.getElementById('al-type').value;
+      const amt = parseInt(document.getElementById('al-amt').value);
+      const date = document.getElementById('al-date').value;
+      if (!amt || !date) { toast('金額と日付を入力'); return; }
+      db.allowanceEntries.push({ id:'al'+Date.now(), staffId: d.uid, type, amount: amt, date });
+      save(); closeModal(); toast('追加しました'); render(); break;
+    }
+    case 'toggleAllowance': {
+      const store = storeById(d.store);
+      store.on[d.key] = !store.on[d.key];
+      save(); render();
+      break;
+    }
+    case 'setRate':
+      // handled via input change below
+      break;
 
     /* advance request */
     case 'submitAdv': {

@@ -15,7 +15,8 @@
       "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"add cash payment flow and multi-store filter\")",
       "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"lighter honey theme + home button always visible\")",
       "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"fix kiosk exit visibility + filter owner from staff picker\")",
-      "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"restore shift management with multi-store + staff view\")"
+      "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"restore shift management with multi-store + staff view\")",
+      "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"add allowances \\(sales/dohan/champagne/shot/event/saturday\\) with toggle settings + payslip detail\")"
     ]
   }
 }
