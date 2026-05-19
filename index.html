@@ -708,6 +708,7 @@ function viewLogin() {
       <div style="margin-top:30px;text-align:center">
         <button style="background:var(--ink);color:var(--honey);border:none;padding:10px 18px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer" data-act="reset">🔄 デモデータを初期化</button>
         <div style="font-size:10px;color:var(--ink-soft);opacity:0.5;margin-top:8px">最新の機能を見るには初期化してください</div>
+        <div style="font-size:9px;color:var(--ink-soft);opacity:0.4;margin-top:4px">v3 · build ${Date.now()}</div>
       </div>
     </div>
   `;
@@ -1222,7 +1223,9 @@ function bind() {
   });
 }
 
-function handle(act, d) {
+function handle(act, d, el) {
+  console.log('[action]', act, d);
+  try {
   switch (act) {
     case 'loginOwner':
       closeModal();
@@ -1449,6 +1452,10 @@ function handle(act, d) {
     /* CSV */
     case 'line':
       toast('LINEで一括送信しました (デモ)'); break;
+  }
+  } catch (err) {
+    console.error('[handle ERROR]', act, err);
+    alert('エラー: ' + err.message + '\n\nアクション: ' + act + '\n\n（このメッセージのスクショを送ってください）');
   }
 }
 
