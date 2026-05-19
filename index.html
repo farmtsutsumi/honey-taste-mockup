@@ -359,6 +359,47 @@
   }
   .pay-row.paid .info .nm { color: var(--muted); text-decoration: line-through; }
   .pay-row.paid .amt-col .am { color: var(--muted); }
+
+  .shift-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; }
+  .shift-grid {
+    display: grid;
+    grid-template-columns: 76px repeat(7, minmax(44px,1fr));
+    gap: 3px;
+    font-size: 10px;
+    min-width: 420px;
+    padding: 4px;
+  }
+  .shift-grid .gh {
+    text-align: center; color: var(--muted); padding: 4px 0;
+    font-weight: 700; font-size: 11px;
+  }
+  .shift-grid .gh.sun { color: var(--bad); }
+  .shift-grid .gh.sat { color: #4a6fa5; }
+  .shift-grid .gh small { display: block; font-weight: 400; font-size: 10px; color: var(--muted); }
+  .shift-grid .gname {
+    padding: 6px 4px; font-size: 12px; font-weight: 600;
+    display: flex; align-items: center;
+  }
+  .shift-grid .gcell {
+    aspect-ratio: 1;
+    background: #f5efe0;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 10px;
+    cursor: pointer; border: none; padding: 0;
+    font-weight: 600;
+  }
+  .shift-grid .gcell.on { background: var(--honey); color: var(--ink); }
+  .shift-grid .gcell:active { transform: scale(0.94); }
+
+  .my-shift-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--line);
+  }
+  .my-shift-row:last-child { border-bottom: none; }
+  .my-shift-row .dt { font-weight: 700; }
+  .my-shift-row .hr { color: var(--honey-deep); font-weight: 700; }
+  .my-shift-row.past { opacity: 0.5; }
   .empty .ico { font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.4; }
 </style>
 </head>
@@ -415,7 +456,29 @@ function seed() {
     { id:'a0', staffId:'u2', amount:20000, reason:'前月分',           status:'approved', at: new Date(Date.now()-86400000*10).toISOString(), handedOver: true },
   ];
   const payouts = []; // { id, staffId, ym, amount, paidAt }
-  return { stores, staff, punches, advances, payouts };
+
+  /* シフト: 過去〜今後14日分 */
+  const shifts = [];
+  let shid = 1;
+  for (let off = -7; off <= 14; off++) {
+    const d = new Date(today); d.setDate(d.getDate() + off);
+    const ds = d.toISOString().slice(0,10);
+    staff.forEach(s => {
+      if (s.id === 'owner') return;
+      const seed = (s.id.charCodeAt(1) + d.getDay()) % 7;
+      if (seed < 2) return;
+      const isEsthe = s.storeId === 's3';
+      shifts.push({
+        id: 'sh' + (shid++),
+        staffId: s.id,
+        date: ds,
+        startHour: isEsthe ? (11 + (seed%3)) : (20 + (seed%2)),
+        endHour:   isEsthe ? (19 + (seed%3)) : (20 + (seed%2) + 5 + (seed%2)),
+      });
+    });
+  }
+
+  return { stores, staff, punches, advances, payouts, shifts };
 }
 
 let db = (() => {
@@ -423,6 +486,26 @@ let db = (() => {
   catch (e) { const s = seed(); localStorage.setItem(KEY, JSON.stringify(s)); return s; }
 })();
 if (!db.payouts) db.payouts = [];
+if (!db.shifts || db.shifts.length === 0) {
+  const today = new Date();
+  db.shifts = [];
+  let shid = 1;
+  for (let off = -7; off <= 14; off++) {
+    const d = new Date(today); d.setDate(d.getDate() + off);
+    const ds = d.toISOString().slice(0,10);
+    db.staff.filter(s => s.id !== 'owner').forEach(s => {
+      const seed = (s.id.charCodeAt(1) + d.getDay()) % 7;
+      if (seed < 2) return;
+      const isEsthe = s.storeId === 's3';
+      db.shifts.push({
+        id: 'sh' + (shid++), staffId: s.id, date: ds,
+        startHour: isEsthe ? (11 + (seed%3)) : (20 + (seed%2)),
+        endHour:   isEsthe ? (19 + (seed%3)) : (20 + (seed%2) + 5 + (seed%2)),
+      });
+    });
+  }
+  save();
+}
 function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
 function resetData() { localStorage.removeItem(KEY); db = seed(); save(); }
 
@@ -485,9 +568,11 @@ function render() {
   if (role === 'owner') {
     if (v === 'approvals') body = viewApprovals();
     else if (v === 'payroll') body = viewPayroll();
+    else if (v === 'shifts') body = viewShifts();
     else body = viewOwnerHome();
   } else {
     if (v === 'advance') body = viewStaffAdvance(me);
+    else if (v === 'myshifts') body = viewMyShifts(me);
     else body = viewStaffHome(me);
   }
 
@@ -628,6 +713,14 @@ function viewOwnerHome() {
         }).join('')}</div>
       `}
 
+      <h2>シフト</h2>
+      <div class="card" data-act="go" data-v="shifts" style="cursor:pointer">
+        <div class="row">
+          <div><div class="name">週ごとのシフト編集</div><div class="meta">タップで時間入力・前週コピー</div></div>
+          <div style="color:var(--muted)">›</div>
+        </div>
+      </div>
+
       <h2>月末の支給（現金）</h2>
       <div class="card" data-act="go" data-v="payroll" style="cursor:pointer">
         <div class="row">
@@ -635,6 +728,89 @@ function viewOwnerHome() {
           <div style="color:var(--muted)">›</div>
         </div>
       </div>
+    </div>
+  `;
+}
+
+function viewShifts() {
+  const storeFilter = session.params?.storeId || db.stores[0].id;
+  const offset = session.params?.weekOff || 0;
+  const today = new Date();
+  const sun = new Date(today);
+  sun.setDate(sun.getDate() - today.getDay() + offset * 7);
+  const days = [...Array(7)].map((_,i)=>{ const d=new Date(sun); d.setDate(sun.getDate()+i); return d; });
+  const staffList = db.staff.filter(s => s.storeId === storeFilter);
+
+  return `
+    <div class="page">
+      <h1>シフト</h1>
+      <div class="lead">タップで時間を編集</div>
+
+      <div class="store-pills">
+        ${db.stores.map(s => `<button class="pill ${storeFilter===s.id?'on':''}" data-act="setStore" data-s="${s.id}">${s.name}</button>`).join('')}
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <button class="btn ghost small" data-act="weekOff" data-d="-1">‹ 前週</button>
+        <div style="font-weight:700;font-size:14px">${fmtDateLong(days[0]).slice(5)} - ${fmtDateLong(days[6]).slice(5)}</div>
+        <button class="btn ghost small" data-act="weekOff" data-d="1">次週 ›</button>
+      </div>
+
+      <div class="card" style="padding:8px">
+        <div class="shift-wrap">
+          <div class="shift-grid">
+            <div></div>
+            ${days.map(d => `<div class="gh ${d.getDay()===0?'sun':d.getDay()===6?'sat':''}">${dowNames[d.getDay()]}<small>${d.getDate()}</small></div>`).join('')}
+            ${staffList.map(s => `
+              <div class="gname">${s.name}</div>
+              ${days.map(d => {
+                const ds = d.toISOString().slice(0,10);
+                const sh = db.shifts.find(x => x.staffId === s.id && x.date === ds);
+                const label = sh ? `${sh.startHour}-${sh.endHour > 24 ? sh.endHour - 24 : sh.endHour}` : '＋';
+                return `<button class="gcell ${sh?'on':''}" data-act="editShift" data-uid="${s.id}" data-date="${ds}">${label}</button>`;
+              }).join('')}
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <button class="btn" data-act="copyPrev" data-store="${storeFilter}">前週をコピー</button>
+      <button class="btn ghost" data-act="confirmShifts" data-store="${storeFilter}">LINEで全員に通知</button>
+    </div>
+  `;
+}
+
+function viewMyShifts(me) {
+  const today = todayISO();
+  const upcoming = db.shifts.filter(sh => sh.staffId === me.id && sh.date >= today).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 14);
+  const past = db.shifts.filter(sh => sh.staffId === me.id && sh.date < today).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 7);
+
+  return `
+    <div class="page">
+      <h1>あなたのシフト</h1>
+      <div class="lead">出勤予定 ${upcoming.length}日</div>
+
+      ${upcoming.length === 0 ? '<div class="card"><div class="empty"><span class="ico">📭</span>これからのシフトはありません</div></div>' :
+      `<div class="card">${upcoming.map(sh => {
+        const d = new Date(sh.date);
+        const todayMark = sh.date === today ? '<span class="badge honey" style="margin-left:6px">今日</span>' : '';
+        return `<div class="my-shift-row">
+          <div><div class="dt">${sh.date.slice(5)} (${dowNames[d.getDay()]})${todayMark}</div></div>
+          <div class="hr">${sh.startHour}:00 〜 ${sh.endHour > 24 ? sh.endHour-24 : sh.endHour}:00</div>
+        </div>`;
+      }).join('')}</div>`}
+
+      ${past.length > 0 ? `
+      <h2>過去の出勤</h2>
+      <div class="card">${past.map(sh => {
+        const d = new Date(sh.date);
+        const p = db.punches.find(p => p.staffId === me.id && p.clockIn.slice(0,10) === sh.date);
+        const h = p && p.clockOut ? ((new Date(p.clockOut) - new Date(p.clockIn))/3600000).toFixed(1) + 'h' : '—';
+        return `<div class="my-shift-row past">
+          <div><div class="dt">${sh.date.slice(5)} (${dowNames[d.getDay()]})</div></div>
+          <div class="hr">${h}</div>
+        </div>`;
+      }).join('')}</div>` : ''}
     </div>
   `;
 }
@@ -785,7 +961,8 @@ function viewStaffHome(me) {
         <div class="sub">${m.days}日 / ${m.hours.toFixed(1)}時間 ${m.adv ? '・ 前借 '+yen(m.adv) : ''}</div>
       </div>
 
-      <button class="btn" data-act="go" data-v="advance">前借りを申請する</button>
+      <button class="btn" data-act="go" data-v="myshifts">シフトを確認する</button>
+      <button class="btn ghost" data-act="go" data-v="advance">前借りを申請する</button>
     </div>
   `;
 }
@@ -942,6 +1119,61 @@ function handle(act, d) {
     }
     case 'print':
       window.print(); break;
+
+    /* shifts */
+    case 'weekOff':
+      if (!session.params) session.params = {};
+      session.params.weekOff = (session.params.weekOff || 0) + parseInt(d.d);
+      setSession(session); render(); break;
+    case 'editShift': {
+      const ex = db.shifts.find(x => x.staffId === d.uid && x.date === d.date);
+      const s = staffById(d.uid);
+      const isEsthe = s.storeId === 's3';
+      modal(`<h3>${s.name} ・ ${d.date}</h3>
+        <label>開始 (時)</label><input id="sh-st" type="number" value="${ex ? ex.startHour : (isEsthe?11:21)}" min="0" max="29">
+        <label>終了 (時)</label><input id="sh-en" type="number" value="${ex ? ex.endHour : (isEsthe?20:26)}" min="0" max="29">
+        <div style="font-size:11px;color:var(--muted);margin:6px 0">26=翌2:00, 27=翌3:00…</div>
+        <button class="btn" data-act="saveShift" data-uid="${d.uid}" data-date="${d.date}">保存</button>
+        ${ex ? `<button class="btn danger" data-act="delShift" data-id="${ex.id}">このシフトを削除</button>` : ''}
+      `);
+      break;
+    }
+    case 'saveShift': {
+      const st = parseInt(document.getElementById('sh-st').value);
+      const en = parseInt(document.getElementById('sh-en').value);
+      const ex = db.shifts.find(x => x.staffId === d.uid && x.date === d.date);
+      if (ex) { ex.startHour = st; ex.endHour = en; }
+      else db.shifts.push({ id:'sh'+Date.now(), staffId: d.uid, date: d.date, startHour: st, endHour: en });
+      save(); closeModal(); toast('保存しました'); render(); break;
+    }
+    case 'delShift':
+      db.shifts = db.shifts.filter(s => s.id !== d.id);
+      save(); closeModal(); toast('削除しました'); render(); break;
+    case 'copyPrev': {
+      const offset = session.params?.weekOff || 0;
+      const today2 = new Date();
+      const sun = new Date(today2); sun.setDate(sun.getDate() - today2.getDay() + offset * 7);
+      const prevSun = new Date(sun); prevSun.setDate(prevSun.getDate() - 7);
+      const staffList = db.staff.filter(s => s.storeId === d.store);
+      let copied = 0;
+      for (let i = 0; i < 7; i++) {
+        const prev = new Date(prevSun); prev.setDate(prev.getDate()+i);
+        const next = new Date(sun); next.setDate(next.getDate()+i);
+        const prevStr = prev.toISOString().slice(0,10);
+        const nextStr = next.toISOString().slice(0,10);
+        staffList.forEach(s => {
+          const p = db.shifts.find(x => x.staffId === s.id && x.date === prevStr);
+          const exists = db.shifts.find(x => x.staffId === s.id && x.date === nextStr);
+          if (p && !exists) {
+            db.shifts.push({ id:'sh'+Date.now()+Math.random(), staffId:s.id, date:nextStr, startHour:p.startHour, endHour:p.endHour });
+            copied++;
+          }
+        });
+      }
+      save(); toast(`${copied}件コピーしました`); render(); break;
+    }
+    case 'confirmShifts':
+      toast('LINEで全員に通知しました (デモ)'); break;
 
     /* advance request */
     case 'submitAdv': {
