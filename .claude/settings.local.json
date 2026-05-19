@@ -10,7 +10,8 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('status:', d.get\\('status'\\)\\); print\\('error:', d.get\\('error'\\)\\)\")",
       "Bash(curl -sI https://farmtsutsumi.github.io/honey-taste-mockup/)",
       "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"operable prototype with full features\")",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git -c user.email=hisayanagi@gmail.com -c user.name=hisa commit -q -m \"simplify prototype\")"
     ]
   }
 }
