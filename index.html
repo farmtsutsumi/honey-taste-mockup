@@ -441,16 +441,19 @@ const ALLOWANCE_DEFS = {
 
 function defaultAllowances(type) {
   if (type === 'snack') return {
-    on:   { salesBack: true,  dohan: true,  shampagne: true,  shot: true,  event: true,  saturday: true  },
-    rate: { saturday: 2000 },
+    on:   { salesBack: true,    dohan: true,    shampagne: true,    shot: true,    event: true,    saturday: true   },
+    kind: { salesBack: 'percent', dohan: 'flat',  shampagne: 'flat',  shot: 'flat',  event: 'flat',  saturday: 'flat' },
+    rate: { salesBack: 20,      dohan: 3000,    shampagne: 5000,    shot: 2000,    event: 5000,    saturday: 2000   },
   };
   if (type === 'bar') return {
-    on:   { salesBack: false, dohan: false, shampagne: true,  shot: true,  event: true,  saturday: true  },
-    rate: { saturday: 1500 },
+    on:   { salesBack: false,   dohan: false,   shampagne: true,    shot: true,    event: true,    saturday: true   },
+    kind: { salesBack: 'percent', dohan: 'flat',  shampagne: 'flat',  shot: 'flat',  event: 'flat',  saturday: 'flat' },
+    rate: { salesBack: 15,      dohan: 2000,    shampagne: 3000,    shot: 1500,    event: 3000,    saturday: 1500   },
   };
   return {
-    on:   { salesBack: true,  dohan: false, shampagne: false, shot: false, event: true,  saturday: false },
-    rate: { saturday: 0 },
+    on:   { salesBack: true,    dohan: false,   shampagne: false,   shot: false,   event: true,    saturday: false  },
+    kind: { salesBack: 'percent', dohan: 'flat',  shampagne: 'flat',  shot: 'flat',  event: 'flat',  saturday: 'flat' },
+    rate: { salesBack: 25,      dohan: 0,       shampagne: 0,       shot: 0,       event: 5000,    saturday: 0      },
   };
 }
 
@@ -547,7 +550,7 @@ if (!db.allowanceEntries || db.allowanceEntries.length === 0) {
   ];
 }
 db.stores.forEach(st => {
-  if (!st.on) Object.assign(st, defaultAllowances(st.type || 'snack'));
+  if (!st.on || !st.kind || !st.rate) Object.assign(st, defaultAllowances(st.type || 'snack'));
 });
 if (!db.shifts || db.shifts.length === 0) {
   const today = new Date();
@@ -612,7 +615,7 @@ function calcMonth(staffId, ymStr) {
       const def = ALLOWANCE_DEFS[key];
       let amount = 0;
       if (def.kind === 'auto' && key === 'saturday') {
-        amount = saturdayCount * (store.rate?.saturday || 0);
+        amount = saturdayCount * (store.rate?.[key] || 0);
       } else {
         amount = db.allowanceEntries
           .filter(e => e.staffId === staffId && e.type === key && e.date.slice(0,7) === ymStr)
@@ -1091,8 +1094,8 @@ function viewAllowanceSettings() {
 
   return `
     <div class="page">
-      <h1>手当の設定</h1>
-      <div class="lead">店舗ごとに使う手当を選べます</div>
+      <h1>バック・手当の設定</h1>
+      <div class="lead">店舗ごとに ON/OFF と料率を設定</div>
 
       <div class="store-pills">
         ${db.stores.map(s => `<button class="pill ${storeId===s.id?'on':''}" data-act="setStore" data-s="${s.id}">${s.name}</button>`).join('')}
@@ -1102,20 +1105,29 @@ function viewAllowanceSettings() {
         ${Object.entries(ALLOWANCE_DEFS).map(([k, def]) => {
           const on = store.on[k];
           const isAuto = def.kind === 'auto';
+          const kind = store.kind?.[k] || 'flat';
+          const rate = store.rate?.[k] || 0;
           return `
             <div style="padding:14px 0;border-bottom:1px solid var(--line)">
               <div style="display:flex;justify-content:space-between;align-items:center">
                 <div>
                   <div style="font-weight:700">${def.label}</div>
-                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${isAuto ? '自動計算（土曜の出勤回数 × 単価）' : '都度入力'}</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${isAuto ? '土曜出勤回数 × 単価（自動）' : (kind === 'percent' ? '売上の%' : '1回あたり定額')}</div>
                 </div>
                 <button class="check ${on?'paid':''}" data-act="toggleAllowance" data-store="${storeId}" data-key="${k}">${on?'✓':''}</button>
               </div>
-              ${isAuto && on ? `
-                <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
-                  <span style="font-size:12px;color:var(--muted)">単価</span>
-                  <input type="number" value="${store.rate?.saturday || 0}" data-act="setRate" data-store="${storeId}" data-key="${k}" style="width:120px;padding:8px">
-                  <span style="font-size:12px;color:var(--muted)">円/回</span>
+              ${on ? `
+                <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+                  ${!isAuto ? `
+                    <div class="segmented" style="margin:0">
+                      <button class="${kind==='flat'?'active':''}" data-act="setKind" data-store="${storeId}" data-key="${k}" data-kind="flat">定額 (円)</button>
+                      <button class="${kind==='percent'?'active':''}" data-act="setKind" data-store="${storeId}" data-key="${k}" data-kind="percent">％ (売上の)</button>
+                    </div>
+                  ` : ''}
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <input type="number" value="${rate}" data-act="setRate" data-store="${storeId}" data-key="${k}" style="flex:1;padding:10px">
+                    <span style="font-size:13px;color:var(--muted);font-weight:600;min-width:60px">${kind === 'percent' ? '% / 売上' : (isAuto ? '円 / 回' : '円 / 1件')}</span>
+                  </div>
                 </div>
               ` : ''}
             </div>
@@ -1123,10 +1135,11 @@ function viewAllowanceSettings() {
         }).join('')}
       </div>
 
-      <div style="font-size:12px;color:var(--muted);margin-top:14px;line-height:1.6">
-        💡 オフにすると明細から消えます<br>
-        💡 「都度入力」は売上やイベントが発生した日に記録する手当<br>
-        💡 「土曜日手当」は出勤データから自動で計算
+      <div style="font-size:12px;color:var(--muted);margin-top:14px;line-height:1.7">
+        💡 <strong>定額</strong>: 1件あたり○円（例: 同伴 ¥3,000/件）<br>
+        💡 <strong>%</strong>: 売上の○%（例: 売り上げバック 売上の20%）<br>
+        💡 <strong>土曜日手当</strong>: 出勤データから自動 ・ 1回あたり ○円<br>
+        💡 入力画面では「件数」or「売上金額」だけ入力すれば、ここの料率で自動計算されます
       </div>
     </div>
   `;
@@ -1414,24 +1427,56 @@ function handle(act, d, el) {
       const store = storeById(s.storeId);
       const available = Object.entries(ALLOWANCE_DEFS).filter(([k, def]) => store.on[k] && def.kind === 'manual');
       if (available.length === 0) { toast('この店舗で使える手当がありません'); return; }
+      const first = available[0][0];
+      const firstKind = store.kind?.[first] || 'flat';
+      const firstRate = store.rate?.[first] || 0;
+      const optHtml = available.map(([k, def]) => {
+        const knd = store.kind?.[k] || 'flat';
+        const rt = store.rate?.[k] || 0;
+        return `<option value="${k}" data-kind="${knd}" data-rate="${rt}" data-label="${def.label}">${def.label} (${knd==='percent'?rt+'%':'¥'+rt.toLocaleString()+'/件'})</option>`;
+      }).join('');
       modal(`<h3>${s.name}さんに手当を追加</h3>
         <label>種類</label>
-        <select id="al-type">${available.map(([k, def]) => `<option value="${k}">${def.label}</option>`).join('')}</select>
-        <label>金額</label>
-        <input id="al-amt" type="number" placeholder="例: 5000" inputmode="numeric">
+        <select id="al-type">${optHtml}</select>
+        <div id="al-input-area"></div>
         <label>日付</label>
         <input id="al-date" type="date" value="${todayISO()}">
+        <div id="al-preview" style="background:var(--honey-light);border-radius:10px;padding:12px;margin-top:14px;text-align:center;font-weight:700"></div>
         <button class="btn" data-act="saveAllowance" data-uid="${d.uid}">追加</button>
       `);
+      const refresh = () => {
+        const sel = document.getElementById('al-type');
+        const opt = sel.selectedOptions[0];
+        const kind = opt.dataset.kind;
+        const rate = parseInt(opt.dataset.rate) || 0;
+        const label = opt.dataset.label;
+        document.getElementById('al-input-area').innerHTML = kind === 'percent'
+          ? `<label>売上金額 (円)</label><input id="al-val" type="number" placeholder="例: 100000" inputmode="numeric">`
+          : `<label>件数</label><input id="al-val" type="number" placeholder="例: 1" inputmode="numeric" value="1">`;
+        const recalc = () => {
+          const v = parseInt(document.getElementById('al-val').value) || 0;
+          const amt = kind === 'percent' ? Math.round(v * rate / 100) : v * rate;
+          document.getElementById('al-preview').textContent = v > 0 ? `${label}: ${yen(amt)}` : '';
+        };
+        document.getElementById('al-val').oninput = recalc;
+        recalc();
+      };
+      document.getElementById('al-type').onchange = refresh;
+      refresh();
       break;
     }
     case 'saveAllowance': {
-      const type = document.getElementById('al-type').value;
-      const amt = parseInt(document.getElementById('al-amt').value);
+      const sel = document.getElementById('al-type');
+      const opt = sel.selectedOptions[0];
+      const type = sel.value;
+      const kind = opt.dataset.kind;
+      const rate = parseInt(opt.dataset.rate) || 0;
+      const v = parseInt(document.getElementById('al-val').value) || 0;
       const date = document.getElementById('al-date').value;
-      if (!amt || !date) { toast('金額と日付を入力'); return; }
-      db.allowanceEntries.push({ id:'al'+Date.now(), staffId: d.uid, type, amount: amt, date });
-      save(); closeModal(); toast('追加しました'); render(); break;
+      if (v <= 0 || !date) { toast('値と日付を入力'); return; }
+      const amount = kind === 'percent' ? Math.round(v * rate / 100) : v * rate;
+      db.allowanceEntries.push({ id:'al'+Date.now(), staffId: d.uid, type, amount, date, raw: v, kind, rate });
+      save(); closeModal(); toast(`${yen(amount)} 追加しました`); render(); break;
     }
     case 'toggleAllowance': {
       const store = storeById(d.store);
@@ -1440,8 +1485,14 @@ function handle(act, d, el) {
       break;
     }
     case 'setRate':
-      // handled via input change below
+      // handled via input onchange in bind()
       break;
+    case 'setKind': {
+      const store = storeById(d.store);
+      if (!store.kind) store.kind = {};
+      store.kind[d.key] = d.kind;
+      save(); render(); break;
+    }
 
     /* advance request */
     case 'submitAdv': {
