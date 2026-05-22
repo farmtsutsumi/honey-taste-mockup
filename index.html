@@ -430,39 +430,22 @@ try {
   ['honeytaste_simple_session','honeytaste_session_v1'].forEach(k => sessionStorage.removeItem(k));
 } catch(e) {}
 
-const ALLOWANCE_DEFS = {
-  salesBack: { label: '売り上げバック', kind: 'manual' },
-  dohan:     { label: '同伴手当',       kind: 'manual' },
-  shampagne: { label: 'シャンパン手当', kind: 'manual' },
-  shot:      { label: 'ショット手当',   kind: 'manual' },
-  event:     { label: 'イベント手当',   kind: 'manual' },
-  saturday:  { label: '土曜日手当',     kind: 'auto' },
-};
-
-function defaultAllowances(type) {
-  if (type === 'snack') return {
-    on:   { salesBack: true,    dohan: true,    shampagne: true,    shot: true,    event: true,    saturday: true   },
-    kind: { salesBack: 'percent', dohan: 'flat',  shampagne: 'flat',  shot: 'flat',  event: 'flat',  saturday: 'flat' },
-    rate: { salesBack: 20,      dohan: 3000,    shampagne: 5000,    shot: 2000,    event: 5000,    saturday: 2000   },
-  };
-  if (type === 'bar') return {
-    on:   { salesBack: false,   dohan: false,   shampagne: true,    shot: true,    event: true,    saturday: true   },
-    kind: { salesBack: 'percent', dohan: 'flat',  shampagne: 'flat',  shot: 'flat',  event: 'flat',  saturday: 'flat' },
-    rate: { salesBack: 15,      dohan: 2000,    shampagne: 3000,    shot: 1500,    event: 3000,    saturday: 1500   },
-  };
-  return {
-    on:   { salesBack: true,    dohan: false,   shampagne: false,   shot: false,   event: true,    saturday: false  },
-    kind: { salesBack: 'percent', dohan: 'flat',  shampagne: 'flat',  shot: 'flat',  event: 'flat',  saturday: 'flat' },
-    rate: { salesBack: 25,      dohan: 0,       shampagne: 0,       shot: 0,       event: 5000,    saturday: 0      },
-  };
-}
+/* 月末にオーナーがまとめて入力する手当の項目（人/月ごとに金額直接入力） */
+const ALLOWANCE_FIELDS = [
+  { key: 'salesBack', label: '売り上げバック' },
+  { key: 'dohan',     label: '同伴手当' },
+  { key: 'shampagne', label: 'シャンパン手当' },
+  { key: 'shot',      label: 'ショット手当' },
+  { key: 'event',     label: 'イベント手当' },
+  { key: 'saturday',  label: '土曜日手当' },
+];
 
 function seed() {
   const today = new Date();
   const stores = [
-    { id: 's1', name: 'Honey Taste', type: 'snack', ...defaultAllowances('snack') },
-    { id: 's2', name: 'Bar Mitsu',   type: 'bar',   ...defaultAllowances('bar') },
-    { id: 's3', name: 'Esthe Lumi',  type: 'esthe', ...defaultAllowances('esthe') },
+    { id: 's1', name: 'Honey Taste' },
+    { id: 's2', name: 'Bar Mitsu'   },
+    { id: 's3', name: 'Esthe Lumi'  },
   ];
   const staff = [
     { id: 'u1', name: 'あおい', storeId: 's1', wage: 2400 },
@@ -523,16 +506,18 @@ function seed() {
     });
   }
 
-  /* 手当エントリ: { id, staffId, type, amount, date, note? } */
-  const allowanceEntries = [
-    { id:'al1', staffId:'u1', type:'shampagne', amount:5000, date: new Date(Date.now()-86400000*3).toISOString().slice(0,10) },
-    { id:'al2', staffId:'u1', type:'dohan',     amount:3000, date: new Date(Date.now()-86400000*5).toISOString().slice(0,10) },
-    { id:'al3', staffId:'u2', type:'shampagne', amount:5000, date: new Date(Date.now()-86400000*2).toISOString().slice(0,10) },
-    { id:'al4', staffId:'u2', type:'salesBack', amount:24500, date: new Date(Date.now()-86400000*1).toISOString().slice(0,10) },
-    { id:'al5', staffId:'u3', type:'shot',      amount:2000, date: new Date(Date.now()-86400000*4).toISOString().slice(0,10) },
+  /* 月次手当: 人ごと・月ごとに金額を直接入力 */
+  const ym = thisMonthStr(today);
+  const monthlyAllowances = [
+    { staffId:'u1', ym, salesBack:24500, dohan:9000,  shampagne:5000, shot:3000, event:10000, saturday:8000 },
+    { staffId:'u2', ym, salesBack:36000, dohan:12000, shampagne:0,    shot:0,    event:5000,  saturday:6000 },
+    { staffId:'u3', ym, salesBack:15000, dohan:0,     shampagne:0,    shot:2000, event:0,     saturday:4000 },
   ];
 
-  return { stores, staff, punches, advances, payouts, shifts, allowanceEntries };
+  return { stores, staff, punches, advances, payouts, shifts, monthlyAllowances };
+}
+
+function thisMonthStr(d) { return d.toISOString().slice(0,7); }
 }
 
 let db = (() => {
@@ -540,18 +525,15 @@ let db = (() => {
   catch (e) { const s = seed(); localStorage.setItem(KEY, JSON.stringify(s)); return s; }
 })();
 if (!db.payouts) db.payouts = [];
-if (!db.allowanceEntries || db.allowanceEntries.length === 0) {
-  db.allowanceEntries = [
-    { id:'al1', staffId:'u1', type:'shampagne', amount:5000,  date: new Date(Date.now()-86400000*3).toISOString().slice(0,10) },
-    { id:'al2', staffId:'u1', type:'dohan',     amount:3000,  date: new Date(Date.now()-86400000*5).toISOString().slice(0,10) },
-    { id:'al3', staffId:'u2', type:'shampagne', amount:5000,  date: new Date(Date.now()-86400000*2).toISOString().slice(0,10) },
-    { id:'al4', staffId:'u2', type:'salesBack', amount:24500, date: new Date(Date.now()-86400000*1).toISOString().slice(0,10) },
-    { id:'al5', staffId:'u3', type:'shot',      amount:2000,  date: new Date(Date.now()-86400000*4).toISOString().slice(0,10) },
+if (!db.monthlyAllowances) {
+  const ym = new Date().toISOString().slice(0,7);
+  db.monthlyAllowances = [
+    { staffId:'u1', ym, salesBack:24500, dohan:9000,  shampagne:5000, shot:3000, event:10000, saturday:8000 },
+    { staffId:'u2', ym, salesBack:36000, dohan:12000, shampagne:0,    shot:0,    event:5000,  saturday:6000 },
+    { staffId:'u3', ym, salesBack:15000, dohan:0,     shampagne:0,    shot:2000, event:0,     saturday:4000 },
   ];
 }
-db.stores.forEach(st => {
-  if (!st.on || !st.kind || !st.rate) Object.assign(st, defaultAllowances(st.type || 'snack'));
-});
+delete db.allowanceEntries;
 if (!db.shifts || db.shifts.length === 0) {
   const today = new Date();
   db.shifts = [];
@@ -592,38 +574,33 @@ const staffById = id => db.staff.find(s => s.id === id);
 const storeById = id => db.stores.find(s => s.id === id);
 const activePunch = sid => db.punches.find(p => p.staffId === sid && !p.clockOut);
 
+function getMonthlyAllowance(staffId, ymStr) {
+  return db.monthlyAllowances.find(a => a.staffId === staffId && a.ym === ymStr);
+}
+function ensureMonthlyAllowance(staffId, ymStr) {
+  let row = getMonthlyAllowance(staffId, ymStr);
+  if (!row) {
+    row = { staffId, ym: ymStr };
+    ALLOWANCE_FIELDS.forEach(f => row[f.key] = 0);
+    db.monthlyAllowances.push(row);
+  }
+  return row;
+}
+
 function calcMonth(staffId, ymStr) {
   const s = staffById(staffId);
-  const store = storeById(s.storeId);
   const punches = db.punches.filter(p => p.staffId === staffId && p.clockIn.slice(0,7) === ymStr && p.clockOut);
   let hours = 0;
-  let saturdayCount = 0;
-  const saturdaySet = new Set();
   punches.forEach(p => {
     const ci = new Date(p.clockIn), co = new Date(p.clockOut);
     hours += (co - ci) / 3600000;
-    if (ci.getDay() === 6) saturdaySet.add(ci.toISOString().slice(0,10));
   });
-  saturdayCount = saturdaySet.size;
   const base = hours * s.wage;
 
-  /* 手当の集計 */
-  const allowances = []; // { key, label, amount }
-  if (store && store.on) {
-    Object.keys(ALLOWANCE_DEFS).forEach(key => {
-      if (!store.on[key]) return;
-      const def = ALLOWANCE_DEFS[key];
-      let amount = 0;
-      if (def.kind === 'auto' && key === 'saturday') {
-        amount = saturdayCount * (store.rate?.[key] || 0);
-      } else {
-        amount = db.allowanceEntries
-          .filter(e => e.staffId === staffId && e.type === key && e.date.slice(0,7) === ymStr)
-          .reduce((sum, e) => sum + e.amount, 0);
-      }
-      if (amount > 0) allowances.push({ key, label: def.label, amount, ...(key === 'saturday' ? { detail: `${saturdayCount}回 × ¥${(store.rate?.saturday || 0).toLocaleString()}` } : {}) });
-    });
-  }
+  const ma = getMonthlyAllowance(staffId, ymStr) || {};
+  const allowances = ALLOWANCE_FIELDS
+    .map(f => ({ key: f.key, label: f.label, amount: ma[f.key] || 0 }))
+    .filter(a => a.amount > 0);
   const allowanceTotal = allowances.reduce((sum, a) => sum + a.amount, 0);
 
   const adv = db.advances
@@ -632,7 +609,7 @@ function calcMonth(staffId, ymStr) {
 
   const gross = base + allowanceTotal;
   const net = gross - adv;
-  return { hours, days: punches.length, base, allowances, allowanceTotal, gross, adv, net, saturdayCount };
+  return { hours, days: punches.length, base, allowances, allowanceTotal, gross, adv, net };
 }
 
 function toast(msg) {
@@ -666,7 +643,6 @@ function render() {
     if (v === 'approvals') body = viewApprovals();
     else if (v === 'payroll') body = viewPayroll();
     else if (v === 'payslip') body = viewPayslip();
-    else if (v === 'allowanceSettings') body = viewAllowanceSettings();
     else if (v === 'shifts') body = viewShifts();
     else body = viewOwnerHome();
   } else {
@@ -834,12 +810,6 @@ function viewOwnerHome() {
       <div class="card" data-act="go" data-v="approvals" style="cursor:pointer">
         <div class="row">
           <div><div class="name">前借り承認</div><div class="meta">${pending > 0 ? pending + '件 待ち' : '承認待ちなし'} ・ 履歴を見る</div></div>
-          <div style="color:var(--muted)">›</div>
-        </div>
-      </div>
-      <div class="card" data-act="go" data-v="allowanceSettings" style="cursor:pointer">
-        <div class="row">
-          <div><div class="name">バック・手当の設定</div><div class="meta">同伴・シャンパン・土曜日 等を ON/OFF と単価設定</div></div>
           <div style="color:var(--muted)">›</div>
         </div>
       </div>
@@ -1026,8 +996,6 @@ function viewPayroll() {
       <button class="btn ghost" data-act="line">明細をLINEで送る</button>
       <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">行をタップ＝明細 ・ 〇タップ＝「渡した」記録</div>
 
-      <hr>
-      <button class="btn ghost" data-act="go" data-v="allowanceSettings">手当の設定（店舗ごと）</button>
     </div>
   `;
 }
@@ -1041,106 +1009,62 @@ function viewPayslip() {
   const store = storeById(s.storeId);
   const m = calcMonth(uid, ym);
   const paid = isPaid(uid, ym);
+  const ma = getMonthlyAllowance(uid, ym) || {};
 
   return `
     <div class="page">
-      <h1>${s.name}さん の明細</h1>
-      <div class="lead">${store.name} ・ ${ym}</div>
+      <h1>${s.name}さん</h1>
+      <div class="lead">${store.name} ・ ${ym} の明細</div>
 
       <div class="hero">
         <div class="lbl">支給額</div>
-        <div class="big">${yen(m.net)}</div>
-        <div class="sub">${paid ? '受け渡し済 ・ '+fmtDateLong(new Date(getPaidAt(uid, ym))) : 'まだ渡していません'}</div>
+        <div class="big" id="payslip-total">${yen(m.net)}</div>
+        <div class="sub">${paid ? '✓ 受け渡し済 ・ '+fmtDateLong(new Date(getPaidAt(uid, ym))) : 'まだ渡していません'}</div>
       </div>
 
       <div class="card">
         <div class="row">
-          <div><div class="name">時間給</div><div class="meta">${m.hours.toFixed(1)}h × ¥${s.wage.toLocaleString()}</div></div>
-          <div class="amt">${yen(m.base)}</div>
+          <div><div class="name">時間給（自動）</div><div class="meta">${m.hours.toFixed(1)}h × ¥${s.wage.toLocaleString()}</div></div>
+          <div class="amt" id="payslip-base">${yen(m.base)}</div>
         </div>
-        ${m.allowances.map(a => `
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);margin:18px 0 6px;font-weight:600;letter-spacing:0.05em">手当を入力（人によって違うのでここで毎月変更OK）</div>
+      <div class="card">
+        ${ALLOWANCE_FIELDS.map(f => `
           <div class="row">
-            <div><div class="name">${a.label}</div>${a.detail ? `<div class="meta">${a.detail}</div>` : ''}</div>
-            <div class="amt">${yen(a.amount)}</div>
+            <div style="flex:1"><div class="name">${f.label}</div></div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:13px;color:var(--muted)">¥</span>
+              <input type="number"
+                     value="${ma[f.key] || 0}"
+                     data-act="saveMonthly"
+                     data-uid="${uid}"
+                     data-key="${f.key}"
+                     style="width:110px;padding:10px;text-align:right;font-weight:700"
+                     inputmode="numeric">
+            </div>
           </div>
         `).join('')}
-        <div class="row" style="background:var(--honey-light);margin:6px -16px -16px;padding:14px 16px;border-radius:0 0 16px 16px">
+      </div>
+
+      <div class="card" style="background:var(--honey-light);border-color:var(--honey)">
+        <div class="row" style="border-bottom:1px solid rgba(0,0,0,0.1)">
           <div class="name">小計</div>
-          <div class="amt">${yen(m.gross)}</div>
+          <div class="amt" id="payslip-gross">${yen(m.gross)}</div>
         </div>
-      </div>
-
-      ${m.adv > 0 ? `<div class="card">
-        <div class="row" style="color:var(--bad)">
-          <div><div class="name">前借り相殺</div></div>
+        ${m.adv > 0 ? `<div class="row" style="color:var(--bad)">
+          <div class="name">前借り相殺</div>
           <div class="amt">− ${yen(m.adv)}</div>
-        </div>
-        <div class="row" style="font-size:17px;font-weight:800">
+        </div>` : ''}
+        <div class="row" style="font-size:18px;font-weight:800">
           <div>差引支給額</div>
-          <div style="color:var(--honey-deep)">${yen(m.net)}</div>
+          <div style="color:var(--honey-deep)" id="payslip-net">${yen(m.net)}</div>
         </div>
-      </div>` : ''}
+      </div>
 
-      <button class="btn" data-act="addAllowance" data-uid="${uid}">＋ 手当を追加</button>
+      <button class="btn" data-act="togglePaid" data-uid="${uid}" data-amt="${Math.round(m.net)}">${paid ? '✓ 受け渡し記録を取消' : '現金を渡したらここをタップ'}</button>
       <button class="btn ghost" data-act="print">この明細を印刷 / PDF</button>
-    </div>
-  `;
-}
-
-/* ============ Allowance settings ============ */
-function viewAllowanceSettings() {
-  const storeId = session.params?.storeId || db.stores[0].id;
-  const store = storeById(storeId);
-
-  return `
-    <div class="page">
-      <h1>バック・手当の設定</h1>
-      <div class="lead">店舗ごとに ON/OFF と料率を設定</div>
-
-      <div class="store-pills">
-        ${db.stores.map(s => `<button class="pill ${storeId===s.id?'on':''}" data-act="setStore" data-s="${s.id}">${s.name}</button>`).join('')}
-      </div>
-
-      <div class="card">
-        ${Object.entries(ALLOWANCE_DEFS).map(([k, def]) => {
-          const on = store.on[k];
-          const isAuto = def.kind === 'auto';
-          const kind = store.kind?.[k] || 'flat';
-          const rate = store.rate?.[k] || 0;
-          return `
-            <div style="padding:14px 0;border-bottom:1px solid var(--line)">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div>
-                  <div style="font-weight:700">${def.label}</div>
-                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${isAuto ? '土曜出勤回数 × 単価（自動）' : (kind === 'percent' ? '売上の%' : '1回あたり定額')}</div>
-                </div>
-                <button class="check ${on?'paid':''}" data-act="toggleAllowance" data-store="${storeId}" data-key="${k}">${on?'✓':''}</button>
-              </div>
-              ${on ? `
-                <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
-                  ${!isAuto ? `
-                    <div class="segmented" style="margin:0">
-                      <button class="${kind==='flat'?'active':''}" data-act="setKind" data-store="${storeId}" data-key="${k}" data-kind="flat">定額 (円)</button>
-                      <button class="${kind==='percent'?'active':''}" data-act="setKind" data-store="${storeId}" data-key="${k}" data-kind="percent">％ (売上の)</button>
-                    </div>
-                  ` : ''}
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <input type="number" value="${rate}" data-act="setRate" data-store="${storeId}" data-key="${k}" style="flex:1;padding:10px">
-                    <span style="font-size:13px;color:var(--muted);font-weight:600;min-width:60px">${kind === 'percent' ? '% / 売上' : (isAuto ? '円 / 回' : '円 / 1件')}</span>
-                  </div>
-                </div>
-              ` : ''}
-            </div>
-          `;
-        }).join('')}
-      </div>
-
-      <div style="font-size:12px;color:var(--muted);margin-top:14px;line-height:1.7">
-        💡 <strong>定額</strong>: 1件あたり○円（例: 同伴 ¥3,000/件）<br>
-        💡 <strong>%</strong>: 売上の○%（例: 売り上げバック 売上の20%）<br>
-        💡 <strong>土曜日手当</strong>: 出勤データから自動 ・ 1回あたり ○円<br>
-        💡 入力画面では「件数」or「売上金額」だけ入力すれば、ここの料率で自動計算されます
-      </div>
     </div>
   `;
 }
@@ -1231,14 +1155,24 @@ function bind() {
   });
   const kss = document.getElementById('ks-store');
   if (kss) kss.onchange = () => { session.params.storeId = kss.value; setSession(session); render(); };
-  document.querySelectorAll('input[data-act="setRate"]').forEach(inp => {
+  document.querySelectorAll('input[data-act="saveMonthly"]').forEach(inp => {
     inp.onclick = e => e.stopPropagation();
-    inp.onchange = () => {
-      const st = storeById(inp.dataset.store);
-      if (!st.rate) st.rate = {};
-      st.rate[inp.dataset.key] = parseInt(inp.value) || 0;
-      save(); toast('保存しました');
+    const onUpdate = () => {
+      const ym = thisMonth();
+      const row = ensureMonthlyAllowance(inp.dataset.uid, ym);
+      row[inp.dataset.key] = parseInt(inp.value) || 0;
+      save();
+      // ライブ再計算（再描画なしで合計を更新）
+      const m = calcMonth(inp.dataset.uid, ym);
+      const tot = document.getElementById('payslip-total');
+      const gross = document.getElementById('payslip-gross');
+      const net = document.getElementById('payslip-net');
+      if (tot) tot.textContent = yen(m.net);
+      if (gross) gross.textContent = yen(m.gross);
+      if (net) net.textContent = yen(m.net);
     };
+    inp.oninput = onUpdate;
+    inp.onchange = () => { onUpdate(); toast('保存しました'); };
   });
 }
 
@@ -1421,78 +1355,10 @@ function handle(act, d, el) {
     case 'confirmShifts':
       toast('LINEで全員に通知しました (デモ)'); break;
 
-    /* 手当 */
-    case 'addAllowance': {
-      const s = staffById(d.uid);
-      const store = storeById(s.storeId);
-      const available = Object.entries(ALLOWANCE_DEFS).filter(([k, def]) => store.on[k] && def.kind === 'manual');
-      if (available.length === 0) { toast('この店舗で使える手当がありません'); return; }
-      const first = available[0][0];
-      const firstKind = store.kind?.[first] || 'flat';
-      const firstRate = store.rate?.[first] || 0;
-      const optHtml = available.map(([k, def]) => {
-        const knd = store.kind?.[k] || 'flat';
-        const rt = store.rate?.[k] || 0;
-        return `<option value="${k}" data-kind="${knd}" data-rate="${rt}" data-label="${def.label}">${def.label} (${knd==='percent'?rt+'%':'¥'+rt.toLocaleString()+'/件'})</option>`;
-      }).join('');
-      modal(`<h3>${s.name}さんに手当を追加</h3>
-        <label>種類</label>
-        <select id="al-type">${optHtml}</select>
-        <div id="al-input-area"></div>
-        <label>日付</label>
-        <input id="al-date" type="date" value="${todayISO()}">
-        <div id="al-preview" style="background:var(--honey-light);border-radius:10px;padding:12px;margin-top:14px;text-align:center;font-weight:700"></div>
-        <button class="btn" data-act="saveAllowance" data-uid="${d.uid}">追加</button>
-      `);
-      const refresh = () => {
-        const sel = document.getElementById('al-type');
-        const opt = sel.selectedOptions[0];
-        const kind = opt.dataset.kind;
-        const rate = parseInt(opt.dataset.rate) || 0;
-        const label = opt.dataset.label;
-        document.getElementById('al-input-area').innerHTML = kind === 'percent'
-          ? `<label>売上金額 (円)</label><input id="al-val" type="number" placeholder="例: 100000" inputmode="numeric">`
-          : `<label>件数</label><input id="al-val" type="number" placeholder="例: 1" inputmode="numeric" value="1">`;
-        const recalc = () => {
-          const v = parseInt(document.getElementById('al-val').value) || 0;
-          const amt = kind === 'percent' ? Math.round(v * rate / 100) : v * rate;
-          document.getElementById('al-preview').textContent = v > 0 ? `${label}: ${yen(amt)}` : '';
-        };
-        document.getElementById('al-val').oninput = recalc;
-        recalc();
-      };
-      document.getElementById('al-type').onchange = refresh;
-      refresh();
-      break;
-    }
-    case 'saveAllowance': {
-      const sel = document.getElementById('al-type');
-      const opt = sel.selectedOptions[0];
-      const type = sel.value;
-      const kind = opt.dataset.kind;
-      const rate = parseInt(opt.dataset.rate) || 0;
-      const v = parseInt(document.getElementById('al-val').value) || 0;
-      const date = document.getElementById('al-date').value;
-      if (v <= 0 || !date) { toast('値と日付を入力'); return; }
-      const amount = kind === 'percent' ? Math.round(v * rate / 100) : v * rate;
-      db.allowanceEntries.push({ id:'al'+Date.now(), staffId: d.uid, type, amount, date, raw: v, kind, rate });
-      save(); closeModal(); toast(`${yen(amount)} 追加しました`); render(); break;
-    }
-    case 'toggleAllowance': {
-      const store = storeById(d.store);
-      store.on[d.key] = !store.on[d.key];
-      save(); render();
-      break;
-    }
-    case 'setRate':
+    /* 月次手当（入力欄を直接更新） */
+    case 'saveMonthly':
       // handled via input onchange in bind()
       break;
-    case 'setKind': {
-      const store = storeById(d.store);
-      if (!store.kind) store.kind = {};
-      store.kind[d.key] = d.kind;
-      save(); render(); break;
-    }
 
     /* advance request */
     case 'submitAdv': {
